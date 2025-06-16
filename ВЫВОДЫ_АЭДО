@@ -1,0 +1,45 @@
+alter session set nls_date_format = 'DD.MM.YYYY HH24:MI:SS';
+select * from DU.tab_contract_output where contract_id = 139285 order by 4 desc;
+
+select * from du.tab_contract_document where contract_id = 139285;
+
+select * from du.tab_output_processing_steps where id = 629403;
+select * from du.tab_output_processing_status order by 1;
+select * from DU.tab_strategy IS_IDU;
+
+---Помогал Костя 
+select DISTINCT(tco.contract_id), tcus.CRM_ID,  tco.output_date AS "Дата создания распоряжения", tcd.subscribe_date AS "Дата подписания распоряжения", tops.step_date_time AS "Дата вывода на счет клинта", (tu.last_name  || ' ' || tu.first_name ) as IK, 
+tst.name, tco.output_sum from DU.tab_contract_output tco 
+left join du.tab_contract_document tcd ON tcd.CONTRACT_DOCUMENT_ID  = tco.CONTRACT_DOCUMENT_ID
+left join du.tab_output_processing_steps tops ON tco.output_processing_step_id = tops.id
+left join du.tab_output_processing_status tst ON tops.output_processing_status_id = tst.id
+left join DU.tab_contract tc ON tc.contract_id = tco.contract_id
+left join DU.tab_customer tcus ON tcus.customer_id = tc.customer_id
+left join DU.tab_strategy ts ON ts.strategy_id = tc.strategy_id
+left join DWH.tab_investor@dwh ti ON ti.alfabank_client_id = tc.alfabank_client_id
+left join DWH.TAB_USER@dwh tu ON tu.user_id = ti.user_id
+where ts.IS_IDU = 1
+and tst.id = 14
+and tco.output_sum > 0
+--and tco.contract_id = 139285 
+and trunc(tco.output_date) between to_date ('01.01.2024', 'dd.mm.yyyy') and to_date ('30.04.2024', 'dd.mm.yyyy') 
+order by 1 ;
+
+
+---- 27052024 не у всех клиентов есть tc.alfabank_client_id, переделал под tcus.CRM_ID, чтоб ИК были у всех
+select DISTINCT(tco.contract_id), tcus.CRM_ID,  tco.output_date AS "Дата создания распоряжения", tcd.subscribe_date AS "Дата подписания распоряжения", tops.step_date_time AS "Дата вывода на счет клинта", (tu.last_name  || ' ' || tu.first_name ) as IK, 
+tst.name, tco.output_sum from DU.tab_contract_output tco 
+left join du.tab_contract_document tcd ON tcd.CONTRACT_DOCUMENT_ID  = tco.CONTRACT_DOCUMENT_ID
+left join du.tab_output_processing_steps tops ON tco.output_processing_step_id = tops.id
+left join du.tab_output_processing_status tst ON tops.output_processing_status_id = tst.id
+left join DU.tab_contract tc ON tc.contract_id = tco.contract_id
+left join DU.tab_customer tcus ON tcus.customer_id = tc.customer_id
+left join DU.tab_strategy ts ON ts.strategy_id = tc.strategy_id
+left join DWH.tab_investor@dwh ti ON ti.CRM_ID$ = tcus.CRM_ID
+left join DWH.TAB_USER@dwh tu ON tu.user_id = ti.user_id
+where ts.IS_IDU = 1
+and tst.id = 14
+and tco.output_sum > 0
+--and tco.contract_id = 139285 
+and trunc(tco.output_date) between to_date ('01.01.2023', 'dd.mm.yyyy') and to_date ('31.12.2023', 'dd.mm.yyyy') 
+order by 3 ;
