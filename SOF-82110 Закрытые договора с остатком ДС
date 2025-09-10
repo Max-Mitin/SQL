@@ -1,0 +1,26 @@
+select * from DWH.tab_investor where investor_id = 17695586057 ;
+select * from DWH.tab_contract where contract_number like '%120135/ДУ-ФЛ-2019%';
+select * from DWH.TAB_USER;
+select * from DWH.tab_contract_aum;
+
+
+
+select tc.contract_number_norm AS "Договор", ti.name AS "ФИО", tu.last_name || ' ' || tu.first_name AS "ИК", SUM(tca.position_value) AS "СЧА" from DWH.tab_investor ti
+join DWH.tab_user tu ON tu.user_id = ti.user_id
+join DWH.tab_contract tc ON tc.investor_id = ti.investor_id
+join DWH.tab_contract_aum tca ON tca.contract_id = tc.contract_id 
+where tc.org_id = 1697
+and trunc(tca.aum_date) = to_date ('28.05.2023', 'dd.mm.yyyy')
+and ti.legal_entity <> 1
+and trunc(tc.stop_date) < to_date ('28.05.2023', 'dd.mm.yyyy')
+and lower(tc.contract_number) not like lower('%умер%')
+and tca.position_value > '8000,00'
+and tca.asset_id is null
+--and tca.investment like 'р/с%'
+GROUP BY tc.contract_number_norm, ti.name, tu.last_name || ' ' || tu.first_name
+--and tca.contract_id = 18631237955
+order by 2;
+
+
+select * from DWH.tab_contract_aum where contract_id = 22777578545 and trunc(aum_date) = to_date ('28.05.2023', 'dd.mm.yyyy');
+select * from DWH.tab_contract_aum where contract_id = 23716946898 and trunc(aum_date) = to_date ('28.05.2023', 'dd.mm.yyyy');
