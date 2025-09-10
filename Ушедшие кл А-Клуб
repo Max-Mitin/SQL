@@ -1,0 +1,94 @@
+--ППЗ А-Клуб
+select * from DWH.TAB_POINT_OF_SALE p where upper(P.NAME) like upper('%А-клуб%');
+--статусы
+select state from DWH.tab_investor group by state ; 
+--кол-во клиентов погашен
+select count(*) from DWH.tab_investor where state = 'Погашен' ;
+
+select * from DWH.tab_contract tc  where tc.contract_number_norm ='292110/ДУ-ФЛ-2021';
+select * from DWH.tab_contract tc  where tc.investor_id = 4906959972;
+select * from DWH.tab_user tu;
+select * from DWH.tab_investor ti;
+select SUM(tca.position_value) from DWH.tab_contract_aum tca where tca.contract_id = 23675987741 and trunc(tca.aum_date) = to_date ('26.04.2023', 'dd.mm.yyyy');
+
+
+---tc.org_id = 1697 клиенты АК
+select (ti.name), concat(ti.document_series, ti.document_number ), ti.state, tu.last_name || ' ' || tu.first_name, tc.stop_date from DWH.tab_investor ti
+left join DWH.tab_contract tc ON tc.investor_id = ti.investor_id 
+left join DWH.tab_user tu ON tu.user_id = ti.user_id
+where ----ti.state = 'Погашен' 
+ tc.point_of_sale_id in ('469321639', '469322622', '469322630', '469323052', '469323185', '469323310', '469323329', '469323433', '2768276641', '2804627921', '2882877902', '2908493422', 
+'3126172042', '3189220582', '3215223791', '3263034685', '3508748489', '3624317114', '4732468752', '18420101099', '19841298761', '20755773234', '34186458665')
+and trunc(tc.stop_date) <> to_date('01.01.9999', 'dd.mm.yyyy')
+order by 5;
+
+select ti.name, concat(ti.document_series, ti.document_number ), ti.state, tu.last_name || ' ' || tu.first_name from DWH.tab_investor ti
+left join DWH.tab_contract tc ON tc.investor_id = ti.investor_id 
+left join DWH.tab_user tu ON tu.user_id = ti.user_id
+where ----ti.state = 'Погашен' 
+ tc.point_of_sale_id in ('469321639', '469322622', '469322630', '469323052', '469323185', '469323310', '469323329', '469323433', '2768276641', '2804627921', '2882877902', '2908493422', 
+'3126172042', '3189220582', '3215223791', '3263034685', '3508748489', '3624317114', '4732468752', '18420101099', '19841298761', '20755773234', '34186458665')
+--and trunc(tc.stop_date) <> to_date('01.01.9999', 'dd.mm.yyyy')
+GROUP BY ti.name, concat(ti.document_series, ti.document_number ), ti.state, tu.last_name || ' ' || tu.first_name, tc.stop_date
+HAVING trunc(tc.stop_date) <> to_date('01.01.9999', 'dd.mm.yyyy');
+
+---******************сколько подозрительных клиентов
+select ti.investor_id, ti.name, concat(ti.document_series, ti.document_number ), ti.state, tu.last_name || ' ' || tu.first_name, tc.stop_date, count(*) from DWH.tab_investor ti
+left join DWH.tab_contract tc ON tc.investor_id = ti.investor_id 
+left join DWH.tab_user tu ON tu.user_id = ti.user_id
+where ----ti.state = 'Погашен' 
+ tc.point_of_sale_id in ('469321639', '469322622', '469322630', '469323052', '469323185', '469323310', '469323329', '469323433', '2768276641', '2804627921', '2882877902', '2908493422', 
+'3126172042', '3189220582', '3215223791', '3263034685', '3508748489', '3624317114', '4732468752', '18420101099', '19841298761', '20755773234', '34186458665')
+and trunc(tc.stop_date) <> to_date('01.01.9999', 'dd.mm.yyyy')
+GROUP BY ti.investor_id, ti.name, concat(ti.document_series, ti.document_number ), ti.state, tu.last_name || ' ' || tu.first_name, tc.stop_date
+HAVING count(*) >1
+ORDER BY 1;
+-----основной вариант ДУ И ИИС
+
+select ti.name AS "ФИО", concat(ti.document_series, ti.document_number ) AS "Паспорт", tu.last_name || ' ' || tu.first_name AS "ИК", SUM(tca.position_value) AS "Остаток" from DWH.tab_investor ti
+left join DWH.tab_contract tc ON tc.investor_id = ti.investor_id 
+left join DWH.tab_user tu ON tu.user_id = ti.user_id
+left join DWH.tab_contract_aum tca ON tca.contract_id = tc.contract_id 
+where tc.point_of_sale_id in ('469321639', '469322622', '469322630', '469323052', '469323185', '469323310', '469323329', '469323433', '2768276641', '2804627921', '2882877902', '2908493422', 
+'3126172042', '3189220582', '3215223791', '3263034685', '3508748489', '3624317114', '4732468752', '18420101099', '19841298761', '20755773234', '34186458665')
+and trunc(tca.aum_date) = to_date ('26.04.2023', 'dd.mm.yyyy')
+and lower(tc.contract_number) not like lower('%умер%') 
+--and trunc(tc.stop_date) <> to_date('01.01.9999', 'dd.mm.yyyy')
+--and ti.name = 'Чаленко Александр Юрьевич'
+GROUP BY ti.name, concat(ti.document_series, ti.document_number ), tu.last_name || ' ' || tu.first_name
+HAVING SUM(tca.position_value) <= 0;
+
+
+--********************************
+select * from DWH.vie_mf_oper_actual moa where moa.point_of_sale_id IN ('469321639', '469322622', '469322630', '469323052', '469323185', '469323310', '469323329', '469323433', '2768276641', '2804627921', '2882877902', '2908493422', 
+'3126172042', '3189220582', '3215223791', '3263034685', '3508748489', '3624317114', '4732468752', '18420101099', '19841298761', '20755773234', '34186458665');  --AASBPM
+--БОЙ ПИФ
+select ti.name AS "ФИО", concat(ti.document_series, ti.document_number) AS "Паспорт", tu.last_name || ' ' || tu.first_name AS "ИК", SUM(tfb.balance_value) AS "Активы по номеру заявки" 
+from AGENT_ALFABANK_OUT.tab_fund_order tfo
+left join AGENT_ALFABANK_OUT.tab_fund_balance tfb ON tfb.order_id = tfo.order_id
+left join DWH.tab_investor ti ON ti.alfabank_client_id = tfo.client_aux_id
+left join ALFA_PIF.tab_request@du tr ON tr.request_number_prefix = tfo.order_number
+left join DWH.tab_user tu ON tu.user_id = ti.user_id
+ where 
+ --tfo.client_aux_id = 'AASBPM'
+ tr.territorial_division_id IN('92909', '92910', '92911', '92912', '92913', '92915', '92917', '92918', '102004', '116184', '142635', '151957', '282771', 
+ '317120', '539353', '1705553', '1835502', '1871104', '5759536', '2835568934')
+ --and tfb.balance_value = 0
+ GROUP BY ti.name, concat(ti.document_series, ti.document_number), tu.last_name || ' ' || tu.first_name
+ HAVING SUM(tfb.balance_value) <=0;
+ 
+ 
+ 
+----неверно
+Select tfb.balance_date AS "ДАТА", ti.name AS "ФИО", tfo.order_number AS "Номер заявки" , tfo.client_aux_id AS "PIN", tfb.balance_value AS "Активы по номеру заявки" 
+from AGENT_ALFABANK_OUT.tab_fund_balance tfb  
+left join AGENT_ALFABANK_OUT.tab_fund_order tfo ON tfo.order_id = tfb.order_id
+left join DWH.tab_investor ti ON ti.alfabank_client_id = tfo.client_aux_id
+left join DWH.vie_mf_oper_actual moa ON moa.order_id = tfb.order_id
+where moa.point_of_sale_id IN ('469321639', '469322622', '469322630', '469323052', '469323185', '469323310', '469323329', '469323433', '2768276641', '2804627921', '2882877902', '2908493422', 
+'3126172042', '3189220582', '3215223791', '3263034685', '3508748489', '3624317114', '4732468752', '18420101099', '19841298761', '20755773234', '34186458665')
+---and trunc(tfb.balance_date) = to_date ('26.04.2023', 'dd.mm.yyyy')
+and ti.investor_id = 1125528
+and tfb.balance_value <=0;
+
+--********************************
