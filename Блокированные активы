@@ -1,0 +1,106 @@
+/* ДУ по закрытым за период + ППЗ от НАСТИ + именно закрытые стратегии согласно данных ЛК, без юриков legal_entity, без умерших */
+WITH rest AS 
+(select DISTINCT tc.contract_number_norm, ti.name, atd.client_aux_id, tca.*----tca.position_value, tca.investment, ta.isin, tc.stop_date 
+from AGENT_ALFABANK_OUT.tab_ddu_contract atd 
+left join DWH.tab_investor ti ON ti.alfabank_client_id = atd.client_aux_id
+left join DWH.tab_contract tc ON tc.investor_id = ti.investor_id
+left join DWH.tab_contract_aum tca ON tca.contract_id = tc.contract_id 
+left join DWH.tab_asset ta ON ta.asset_id = tca.asset_id
+where trunc(tca.aum_date) = to_date ('28.02.2023', 'dd.mm.yyyy')
+and tc.org_id = 1697
+and atd.client_aux_id <> '-'
+and trunc(tc.stop_date) between to_date ('24.02.2022', 'dd.mm.yyyy') and to_date ('28.01.2023', 'dd.mm.yyyy')
+and tca.asset_id is not null  ---учитываю только ЦБ
+and ti.legal_entity <> 1
+and tc.point_of_sale_id NOT IN('469321639', '469322622', '469322630', '469323052', '469323185', '469323310', '469323329', '469323433', '2768276641', '2804627921', 
+'2882877902', '2908493422', '3126172042', '3189220582', '3215223791', '3263034685', '3508748489', '3624317114', '4732468752', '18420101099', '19841298761', '20755773234')
+AND lower(tc.contract_number) not like lower('%умер%') 
+ORDER BY 1, 5) 
+
+Select contract_number_norm, name, client_aux_id, SUM(position_value), stop_date 
+FROM rest
+GROUP BY contract_number_norm, name, client_aux_id, stop_date
+Order by 1, 5;
+select * from DWH.tab_composite tc where tc.composite_id IN ('100032', '100046', '100050', '100052', '100053', '100066', '100076', '100077', '100086', '100087', '4330693961', '4911352316', '5826119311',
+'6979047034', '8934562803', '9933430719', '9933430720', '9933430721', '10163189059', '13303840594'); ---отбор именно заблоченных стратегий, согласно данных ЛК
+
+--По открытым договорам
+with rest AS  
+(select DISTINCT tc.contract_number_norm, ti.name, atd.client_aux_id, tca.position_value, tc.stop_date   /* tc.stop_date, tca.* */   
+from AGENT_ALFABANK_OUT.tab_ddu_contract atd 
+inner join DWH.tab_investor ti ON ti.alfabank_client_id = atd.client_aux_id
+inner join DWH.tab_contract tc ON tc.investor_id = ti.investor_id
+inner join DWH.tab_contract_aum tca ON tca.contract_id = tc.contract_id                           
+where 
+trunc(tca.aum_date) = to_date ('14.03.2023', 'dd.mm.yyyy')
+and tc.org_id = 1697
+and atd.client_aux_id <> '-'
+and trunc(tc.stop_date) > to_date ('14.03.2023', 'dd.mm.yyyy')  -----between to_date ('24.02.2022', 'dd.mm.yyyy') and to_date ('28.01.2023', 'dd.mm.yyyy')
+---and lower(tca.investment) not like lower('%р/с%')
+and tc.composite_id IN ('100032', '100046', '100050', '100052', '100053', '100066', '100076', '100077', '100086', '100087', '4330693961', '4911352316', '5826119311',
+'6979047034', '8934562803', '9933430719', '9933430720', '9933430721', '10163189059', '13303840594')
+and ti.legal_entity <> 1  
+and tca.asset_id is not null
+and tc.point_of_sale_id NOT IN('469321639', '469322622', '469322630', '469323052', '469323185', '469323310', '469323329', '469323433', '2768276641', '2804627921', 
+'2882877902', '2908493422', '3126172042', '3189220582', '3215223791', '3263034685', '3508748489', '3624317114', '4732468752', '18420101099', '19841298761', '20755773234')
+AND lower(tc.contract_number) not like lower('%умер%') 
+--AND ti.name = 'Ревзин Александр Дмитриевич'
+ORDER BY 1, 5);
+
+-----------------------------------------------------
+----ПИФ, УДАЛИТЬ ОДИНАКОВЫЕ 
+Select * FROM AGENT_ALFABANK_OUT.tab_fund_balance tfb ;
+
+select * from DWH.vie_mf_oper_actual moa where moa.investor_id = '4834419118';
+
+select * from AGENT_ALFABANK_OUT.tab_fund_order where contract_id = '34080015856';
+--для ППЗ
+select * from ALFA_PIF.tab_request@du;
+------------------------------------------------------
+Select moa.order_number from AGENT_ALFABANK_OUT.tab_fund_balance tfb
+left join DWH.vie_mf_oper_actual moa ON tfb.order_id = moa.order_id
+where moa.investor_id = '4834419118';
+
+
+    Select tfb.balance_date AS "ДАТА", ti.name AS "ФИО", tfo.order_number AS "Номер заявки" , tfo.client_aux_id AS "PIN", tfo.product_aux_id, tp.name AS "ФОНД", SUM(ROUND(tfb.balance_value, 2)) AS "Активы по номеру заявки" 
+    from AGENT_ALFABANK_OUT.tab_fund_balance tfb  
+    left join AGENT_ALFABANK_OUT.tab_fund_order tfo ON tfo.order_id = tfb.order_id
+    left join DWH.tab_investor ti ON ti.alfabank_client_id = tfo.client_aux_id
+    left join agent_alfabank_out.tab_product tp ON tp.aux_id = tfo.product_aux_id
+    where trunc(tfb.balance_date) = to_date ('28.02.2022', 'dd.mm.yyyy') 
+    and tfb.deleteid$ is null
+    and tfo.deleteid$ is null
+    and tfo.client_aux_id <> '-' ----OR tfo.client_aux_id <> 'AAAAA' OR tfo.client_aux_id <> 'AAAAAA'
+    and tfo.client_aux_id <> 'U30001'
+    and tfo.product_aux_id IN ('P16','P07','P10','P09','ABY','N58','N93','N99')
+    and tfb.balance_value > 0 
+    GROUP BY tfb.balance_date, ti.name, tfo.order_number, tfo.client_aux_id, tfo.product_aux_id, tp.name
+    order by 4, 6;
+    
+    
+----Уникальные клиенты
+    Select count (distinct tfo.client_aux_id)  from AGENT_ALFABANK_OUT.tab_fund_balance tfb  
+    inner join AGENT_ALFABANK_OUT.tab_fund_order tfo ON tfo.order_id = tfb.order_id
+    --inner join DWH.tab_investor ti ON ti.alfabank_client_id = tfo.client_aux_id
+    where tfb.balance_date = to_date ('28.02.2022', 'dd.mm.yyyy') 
+    and tfb.deleteid$ is null
+    --and tfo.client_aux_id <> '-' OR tfo.client_aux_id <> 'AAAAA' OR tfo.client_aux_id <> 'AAAAAA'
+    and tfo.deleteid$ is null
+    and tfo.product_aux_id IN ('P16','P07','P10','P09','ABY','N58','N93','N99')
+    --group by tfo.product_aux_id
+    order by tfo.product_aux_id;
+    
+    
+---Проверочный
+    Select tfo.product_aux_id, count (distinct tfo.client_aux_id), sum (tfb.balance_value)  from AGENT_ALFABANK_OUT.tab_fund_balance tfb  
+    inner join AGENT_ALFABANK_OUT.tab_fund_order tfo ON tfo.order_id = tfb.order_id
+    --inner join DWH.tab_investor ti ON ti.alfabank_client_id = tfo.client_aux_id
+    where tfb.balance_date = to_date ('28.02.2022', 'dd.mm.yyyy') 
+    and tfb.deleteid$ is null
+    --and tfo.client_aux_id <> '-' OR tfo.client_aux_id <> 'AAAAA' OR tfo.client_aux_id <> 'AAAAAA'
+    and tfo.deleteid$ is null
+    and tfo.product_aux_id IN ('P16','P07','P10','P09','ABY','N58','N93','N99')
+    group by tfo.product_aux_id
+    order by tfo.product_aux_id;
+    
+
