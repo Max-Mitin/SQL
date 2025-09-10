@@ -1,0 +1,115 @@
+----Часть от Артема по ДУ
+select 
+    ti.investor_id,
+    ti.name as CLIENT_NAME,
+    --ti.CLIENT_CATEGORY,
+    (tu.last_name  || ' ' || tu.first_name) as IK,
+    pos.name as BRANCH_NAME,
+    SUM(ca.position_value) as СЧА
+from dwh.tab_contract tc
+    join DWH.tab_investor ti on ti.investor_id = tc.investor_id
+    join dwh.tab_user tu on tu.user_id = ti.user_id
+    join DWH.tab_point_of_sale pos on pos.POINT_OF_SALE_ID = tc.POINT_OF_SALE_ID
+    join dwh.tab_contract_aum ca ON ca.contract_id = tc.contract_id
+--    join MIS.vie_aum va on ti.investor_id = va.investor_id
+where tu.user_id = 2842579462
+    --and ti.investor_id = 3962248304
+    and ca.aum_date = to_date ('04.09.2024', 'dd.mm.yyyy')
+    and tc.stop_date > to_date ('04.09.2023', 'dd.mm.yyyy')
+group by
+    ti.investor_id,
+    ti.name,
+    --ti.CLIENT_CATEGORY,
+    (tu.last_name  || ' ' || tu.first_name),
+    pos.name;
+
+----СЧА по ПИФ   
+     select * from MIS.vie_aum where trunc(aum_date) = to_date ( '04.09.2024', 'DD.MM.YYYY') and investor_id = 3962248304;
+----проверочный по ПИФ   
+    select ti.investor_id,
+    ti.name as CLIENT_NAME,
+    (tu.last_name  || ' ' || tu.first_name) as IK,
+    SUM(va.MF_VALUE_RUB) as СЧА_ПИФ
+    from MIS.vie_aum va  
+    inner join DWH.tab_investor ti on ti.investor_id = va.investor_id
+    inner join dwh.tab_user tu on tu.user_id = ti.user_id
+    where trunc(aum_date) = to_date ( '04.09.2024', 'DD.MM.YYYY')
+    and tu.user_id = 2842579462
+    and ti.investor_id = 3962248304
+    group by ti.investor_id, ti.name, (tu.last_name  || ' ' || tu.first_name);
+----ИТОГОВЫЙ ПО ПИФ  
+    select ti.investor_id,
+    ti.name as CLIENT_NAME,
+    (tu.last_name  || ' ' || tu.first_name) as IK,
+    SUM(pab.balance) as СЧА_ПИФ
+    from dwh.TAB_PERSONAL_ACCOUNT_BALANCE pab  
+    inner join DWH.tab_investor ti on ti.investor_id = pab.investor_id
+    inner join dwh.tab_user tu on tu.user_id = ti.user_id
+    where trunc(pab.BALANCE_DATE) = to_date ( '04.09.2024', 'DD.MM.YYYY')
+    and tu.user_id = 2842579462
+    --and ti.investor_id = 3962248304
+    group by ti.investor_id, ti.name, (tu.last_name  || ' ' || tu.first_name)
+    order by 1; 
+    
+    select ti.investor_id,
+    ti.name as CLIENT_NAME,
+    (tu.last_name  || ' ' || tu.first_name) as IK,
+    min(op.point_of_sale_id),
+    SUM(pab.balance) as СЧА_ПИФ
+    from dwh.TAB_PERSONAL_ACCOUNT_BALANCE pab  
+    inner join DWH.tab_investor ti on ti.investor_id = pab.investor_id
+    inner join dwh.tab_user tu on tu.user_id = ti.user_id
+    join Dwh.Tab_Mf_Order O on o.investor_id = ti.investor_id
+    join DWH.Tab_Mf_Oper op on Op.Order_Id = O.Mf_Order_Id
+    where trunc(pab.BALANCE_DATE) = to_date ( '04.09.2024', 'DD.MM.YYYY')
+    and tu.user_id = 2842579462
+    and O.Order_Type = 'ЗаявкаНаВыдачуПаев'
+    --and ti.investor_id = 3962248304
+    group by ti.investor_id, ti.name, (tu.last_name  || ' ' || tu.first_name), op.point_of_sale_id
+    order by 1; 
+    
+    
+    
+select * from dwh.TAB_PERSONAL_ACCOUNT_BALANCE 
+where BALANCE_DATE = date '2024-09-04'
+and investor_id = 3962248304;
+----КАК вывести одну строку из группы через оконную функцию
+SELECT point_of_sale_id
+FROM (
+    SELECT 
+        op.point_of_sale_id,
+        op.wiring_date,
+        ROW_NUMBER() OVER (ORDER BY op.wiring_date ASC, op.point_of_sale_id ASC) as rn
+    FROM Dwh.Tab_Mf_Order O
+    JOIN DWH.Tab_Mf_Oper op ON Op.Order_Id = O.Mf_Order_Id
+    WHERE o.investor_id = 3962248304
+      AND O.Order_Type = 'ЗаявкаНаВыдачуПаев'
+)
+WHERE rn = 1;
+----Просмотр ИСПОЛНЕННЫХ в действительности заявок, т.к. в обоих таблицах полно холостых (не исполненных) и только при мапинге можно увидеть то, что в ЛК
+Select *
+From Dwh.Tab_Mf_Order O
+join DWH.Tab_Mf_Oper op on Op.Order_Id = O.Mf_Order_Id
+where o.investor_id = 3962248304
+and O.Order_Type = 'ЗаявкаНаВыдачуПаев';
+
+
+---Далее хлам
+Select * From DWH.Tab_Mf_Oper O where o.investor_id = 3962248304
+Select * From DWH.vie_mf_oper_actual where investor_id = 3962248304;
+
+Select op.investor_id
+From Dwh.Tab_Mf_Order O
+join DWH.Tab_Mf_Oper op on Op.Order_Id = O.Mf_Order_Id
+join DWH.tab_investor ti on ti.investor_id = op.investor_id
+join dwh.tab_user tu on tu.user_id = ti.user_id
+where 
+--o.investor_id = 3962248304 and
+tu.user_id = 2842579462
+and O.Order_Type = 'ЗаявкаНаВыдачуПаев'
+group by op.investor_id;
+    
+    
+select * from dwh.TAB_PERSONAL_ACCOUNT_BALANCE 
+where BALANCE_DATE = date '2024-09-04';    
+    
