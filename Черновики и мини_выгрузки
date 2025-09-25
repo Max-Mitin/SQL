@@ -1,0 +1,1147 @@
+---SOF-40586
+select * from dwh.tab_contract where contract_number like '40021/ДУ-ФЛ-2016%';
+select * from dwh.tmp0_UDO;
+delete dwh.tmp0_UDO;
+
+
+select COLUMN1, c.alfabank_client_id from dwh.tmp0_UDO t
+left join rep_du.tab_contract c
+ON t.COLUMN1 = c.contract_number_prefix;
+--от Саши вариант
+select distinct COLUMN1, nvl(i.alfabank_client_id, c.alfabank_client_id) as ab from dwh.tmp0_UDO t
+left join REP_DU.tab_contract c on c.contract_number_prefix = t.column1
+left join DWH.tab_contract cc on cc.contract_id = c.uk$
+left join DWH.tab_investor i on i.investor_id = cc.investor_id;
+
+TRUNCATE TABLE dwh.tmp0_UDO;
+
+select * from REP_DU.tab_contract;
+select * from DWH.tab_contract;
+
+
+
+select * from rep_du.tab_contract where contract_number_prefix = '71948/ДУ-ФЛ-2018';
+select * from rep_du.tab_contract  where deleteid$ is not null;
+select * from dwh.tmp0_UDO t
+left join rep_du.tab_contract;
+
+select * from dwh.tab_contract t where t.contract_number like '%231267/ДУ-ФЛ-ИИС-2020%';
+
+-------
+select t.investor_id, b.investor_id, t.contract_number, b.alfabank_client_id from dwh.tab_contract t
+left join DWH.tab_investor b ON t.investor_id = b.investor_id
+where t.contract_number IN ('206628/ДУ-ФЛ-ИИС-2020',
+'248018/ДУ-ФЛ-ИИС-2020',
+'119579/ДУ-ФЛ-ИИС-2019',
+'209679/ДУ-ФЛ-ИИС-2020',
+'107795/ДУ-ФЛ-ИИС-2019',
+'122322/ДУ-ФЛ-ИИС-2019',
+'113179/ДУ-ФЛ-ИИС-2019',
+'132208/ДУ-ФЛ-ИИС-2020',
+'132573/ДУ-ФЛ-ИИС-2020',
+'118147/ДУ-ФЛ-ИИС-2019',
+'264423/ДУ-ФЛ-ИИС-2020',
+'217408/ДУ-ФЛ-ИИС-2020',
+'271268/ДУ-ФЛ-ИИС-2021',
+'187531/ДУ-ФЛ-ИИС-2020');
+
+---ДУ для Семеновой А. SOF-70092
+select b.investor_id, b.name, concat(b.document_series, b.document_number) as pasport, t.contract_number_prefix, x.contract_id, b.alfabank_client_id, b.birthday from REP_DU.tab_contract t
+left join DWH.tab_contract cc ON t.uk$ = cc.contract_id 
+left join DWH.tab_investor b ON cc.investor_id = b.investor_id
+left join AGENT_ALFABANK_OUT.tab_ddu_contract x ON x.contract_number = t.contract_number_prefix
+where t.contract_number_prefix IN ( );
+
+---ПИФ для Семеновой А. SOF-70092
+select b.investor_id, b.name, concat(b.document_series, b.document_number) as pasport, t.order_number, t.mf_order_id as ORDER_ID, b.alfabank_client_id, c.birthday AS from_AVANCOR, b.birthday AS from_DWH, du.birthday AS from_AEDO from DWH.tab_mf_order t
+left join DWH.tab_investor b ON t.investor_id = b.investor_id
+left join REP_AVANCORE.tab_investor c ON t.investor_id = c.UK$
+left join ALFA_PIF.tab_request@du du ON concat(b.document_series, b.document_number) = concat(du.doc_series, du.doc_number)
+where t.order_number IN 
+('-37-0000317',
+'-37-0000349',
+'-37-0000471',
+'-37-0000488',
+'-37-0000611',
+'-37-0000642',
+'-37-0000810',
+'-37-0001099',
+'-37-0001165',
+'-37-0001263',
+'-37-0001444',
+'-37-0001499',
+'-37-0001583',
+'-37-0001841',
+'-37-0001858',
+'-37-0002014',
+'-37-0002088',
+'-37-0002327',
+'-37-0002460',
+'-37-0002478',
+'-37-0002569',
+'-37-0002702',
+'-37-0002828',
+'-37-0002890',
+'-37-0002991',
+'-37-0003232',
+'-37-0003313',
+'-37-0003447',
+'-37-0003469',
+'-37-0003511',
+'-7-0000642',
+'-7-0007708',
+'05.099088.002',
+'05.114010.007',
+'05.1416032.751',
+'05.193006.002',
+'05.296015.015',
+'05.299019.001',
+'05.325001.006',
+'05.697001.168111',
+'05.697001.168178',
+'05.697001.168357',
+'05.697001.168409',
+'05.697001.168428',
+'05.697001.168566',
+'05.697001.25644')
+GROUP BY  b.investor_id, b.name,  concat(b.document_series, b.document_number), t.order_number, t.mf_order_id, b.alfabank_client_id, c.birthday, b.birthday, du.birthday;
+
+
+
+---Марине -- , 
+select tc.contract_number_norm, ti.investor_id AS "CLIENT_DWH_ID", tu.user_id AS "IK_DWH_ID", (tu.last_name  || ' ' || tu.first_name) as IK,  ti.name,
+REPLACE(tu.parentuser_name, ',') AS "Директор департамента", NVL(tu.department, 'не указан' ) AS "Департамент" from dwh.tmp0_UDO tmp
+join DWH.tab_contract tc ON tc.contract_number_norm = tmp.column1
+join DWH.tab_investor ti on ti.investor_id = tc.investor_id
+join DWH.TAB_USER tu on tu.user_id = ti.user_id
+ORDER BY tc.contract_number_norm;
+
+
+select t.contract_number_prefix, b.investor_id, b.name, v.user_id, (v.first_name || ' ' || v.last_name) as IK from REP_DU.tab_contract t
+left join DWH.tab_contract cc ON t.uk$ = cc.contract_id 
+left join DWH.tab_investor b ON cc.investor_id = b.investor_id
+left join AGENT_ALFABANK_OUT.tab_ddu_contract x ON x.contract_number = t.contract_number_prefix
+left join DWH.TAB_USER v ON v.user_id = b.user_id
+where t.contract_number_prefix IN 
+('')
+ORDER BY t.contract_number_prefix;
+---или
+select DISTINCT(t.contract_number_prefix), b.investor_id, b.name, v.user_id, (v.last_name  || ' ' || v.first_name ) as IK , z.parentuser_name AS "Директор департамента From CRM", NVL(v.department, 'не указан' ) AS "Департамент" from REP_DU.tab_contract t
+left join DWH.tab_contract cc ON t.uk$ = cc.contract_id 
+left join DWH.tab_investor b ON cc.investor_id = b.investor_id
+left join AGENT_ALFABANK_OUT.tab_ddu_contract x ON x.contract_number = t.contract_number_prefix
+left join DWH.TAB_USER v ON v.user_id = b.user_id
+left join rep_crm2015.tab_user z ON z.uk$ = v.user_id
+where t.contract_number_prefix IN 
+('')
+ORDER BY t.contract_number_prefix;
+
+Select * from rep_crm2015.tab_user;
+
+
+
+
+---Выгрузка Прошу выгрузить данные по действующим клиентам в стратегиях SOF-70897:
+/*1. Альфа Портфель PRE-IPO Цифровая инфраструктура
+  2. Альфа Портфель PRE-IPO 2.0
+  3. Альфа Верные решения*/
+select  t.contract_number, SUM(c.amount), v.investor_id, v.name, v.alfabank_client_id, t.contract_date from DWH.tab_contract t
+left join DWH.tab_investor v ON v.investor_id=t.investor_id
+left join DWH.tab_cashflow_in c ON c.investor_id=t.investor_id
+where composite_id = 100116
+GROUP BY t.contract_number, v.investor_id, v.name, v.alfabank_client_id, t.contract_date;
+
+
+select * from DWH.tab_composite where lower(name) like lower('%МОЙ КАПИТАЛ%') ORDER BY 2;
+select * from dwh.tab_contract_aum where balance_value is not null;
+select SUM(balance_value) from dwh.tab_contract_aum where contract_id = 27429072037 AND aum_date = '14.10.2022' GROUP BY contract_id order by aum_date desc;
+select * from dwh.tab_contract_aum where contract_id = 27429072037 AND aum_date = '14.10.2022'  order by aum_date desc;
+--черновик
+---3206081729  Альфа Денежный поток РУБЛИ
+---3206081728  Денежный поток - ДОЛЛАРЫ
+---3206081727  Альфа Денежный поток. Евро
+---4523026899  Альфа Денежный Поток. Доллары 2.0
+select v.contract_number, v.contract_id, z.name, c.aum_date, c.position_value, c.balance_value, (t.last_name || ' ' || t.first_name) as IK  from DWH.tab_contract v
+left join DWH.tab_investor z ON z.investor_id = v.investor_id
+left join DWH.TAB_USER t ON t.user_id = z.user_id
+left join dwh.tab_contract_aum c ON c.contract_id = v.contract_id
+where composite_id IN (3206081729 , 3206081728, 3206081727, 4523026899) ---where composite_id IN (100081, 100080, 100116)
+AND aum_date = '21.12.2022';
+
+---релиз
+select v.contract_number,  z.name, SUM(c.balance_value), (t.last_name || ' ' || t.first_name) as IK, 
+case when v.composite_id = 100081 then 'Альфа Портфель PRE-IPO Цифровая инфраструктура'
+     when v.composite_id = 100080 then 'Альфа Портфель PRE-IPO 2.0'    
+     when v.composite_id = 100116 then 'Альфа Верные решения' 
+end AS Product
+from DWH.tab_contract v
+left join DWH.tab_investor z ON z.investor_id = v.investor_id
+left join DWH.TAB_USER t ON t.user_id = z.user_id
+left join dwh.tab_contract_aum c ON c.contract_id = v.contract_id
+where composite_id IN (100081, 100080, 100116)
+AND aum_date = '14.10.2022'
+GROUP BY v.contract_number, z.name, v.composite_id, t.last_name || ' ' || t.first_name, --- v.composite_id
+case when v.composite_id = '100081' then 'Альфа Портфель PRE-IPO Цифровая инфраструктура'
+     when v.composite_id = '100080' then 'Альфа Портфель PRE-IPO 2.0'    
+     when v.composite_id = '100116' then 'Альфа Верные решения' end;
+
+
+---Салащенко, выгрузить ПИФы
+select b.investor_id, b.name, concat(b.document_series, b.document_number) as pasport, t.order_number, t.mf_order_id as ORDER_ID, b.alfabank_client_id, c.birthday AS from_AVANCOR, b.birthday AS from_DWH, du.birthday AS from_AEDO 
+from DWH.tab_mf_order t
+left join DWH.tab_investor b ON t.investor_id = b.investor_id
+left join REP_AVANCORE.tab_investor c ON t.investor_id = c.UK$
+left join ALFA_PIF.tab_request@du du ON concat(b.document_series, b.document_number) = concat(du.doc_series, du.doc_number)
+where t.order_number IN 
+('-37-0000317',
+'-37-0000349',
+'-37-0000471');
+
+---SOF-72532_ФОНДЫ под блокировкой.xlsx
+SELECT DISTINCT t.investor_id AS "ID клиента", t.name AS "ФИО", t.birthday AS "Дата рождения", nvl(t.birthplace, 'не указан') AS "Место рождения" FROM DWH.tab_investor t
+LEFT JOIN DWH.vie_mf_oper_actual mf ON mf.investor_id = t.investor_id
+WHERE mf.fund_id IN ('49064050', '49064052', '2867829941', '49064047', '2867829943', '15460250406','49064053', 
+'49064046', '5641712909', '25548632587', '24749178643', '17251959090', '24546979133', '22435522303', '27364039753', '25548632588', '8946904992', '4948331115', 
+'19263372717', '4467428274', '3879255171', '3894804468' )
+AND mf.wiring_date > '01.08.2022'
+AND mf.oper_type = 'Выдача паев'
+AND mf.order_type = 'ЗаявкаНаВыдачуПаев'
+--AND mf.order_status = 'Исполнена' НЕ ИСПОЛЬЗОВАТЬ, не сответствует ЛК
+ORDER BY t.investor_id; --8680
+
+
+select * from DWH.tab_investor where lower(name) like lower('%Стариков Денис Владимирович%'); ---22975
+select * from DWH.tab_investor where investor_id = 1025067;
+select * from DWH.vie_mf_oper_actual mf;
+
+
+select DISTINCT fund_id from DWH.vie_mf_oper_actual mf WHERE mf.fund_id IN ('49064050', '49064052', '2867829941', '49064047', '2867829943', '15460250406','49064053', 
+'49064046', '5641712909', '25548632587', '24749178643', '17251959090', '24546979133', '22435522303', '27364039753', '25548632588', '8946904992', '4948331115', 
+'19263372717', '4467428274', '3879255171', '3894804468' );
+
+select DISTINCT fund_id from DWH.vie_mf_oper_actual mf WHERE mf.fund_id IN (49064050, 49064052, 2867829941, 49064047, 2867829943, 15460250406, 49064053, 49064046, 
+5641712909, 25548632587, 24749178643, 17251959090, 24546979133, 22435522303, 27364039753, 25548632588, 8946904992, 4948331115, 19263372717, 4467428274, 3879255171, 
+3894804468 );
+--операции по ПИФ
+select * from DWH.vie_mf_oper_actual where investor_id = '4834419118' ; --DWH.DM_G8_V108594 A78565
+select * from DWH.vie_mf_oper_actual where wiring_date > '01.08.2022' and order_type NOT IN ('ЗаявкаНаПогашениеПаев','ЗаявкаНаОбменПаев');
+
+select * from REP_AVANCORE.tab_investor where lower(name) like lower('%Суевалов Игорь Анатольевич%');
+
+select * from DWH.tab_mf_order t;
+---fund_id Name
+Select * FROM DWH.tab_fund where fund_id = 49064043;
+Select * from DWH.tab_fund WHERE lower(name) like lower('%депозит%');
+-----name-------------+--FUND_ID---
+--Альфа-Капитал Баланс            49064050
+--Альфа-Капитал Глобальный баланс 49064052
+--Альфа-Капитал Ликвидные акции   2867829941
+--Альфа-Капитал Технологии        49064047
+--Альфа-Капитал Еврооблигации     2867829943
+--Мой капитал Акции               15460250406
+--Альфа-Капитал Золото            49064053
+--Альфа-Капитал Ресурсы           49064046
+--АЛЬФА - КАПИТАЛ ЭС ЭНД ПИ 500 (S&P 500®)  5641712909
+--Альфа-Капитал Видеоигры         25548632587
+--Альфа-Капитал Квант             24749178643
+--Альфа-Капитал Китайские акции   17251959090
+--Альфа-Капитал Космос            24546979133
+--Альфа-Капитал Медицина          22435522303
+--Альфа-Капитал Стратегия будущего 27364039753
+--Альфа-Капитал Управляемые еврооблигации  25548632588
+--ЕВРОПА 600                      8946904992
+--ТЕХНОЛОГИИ 100                  4948331115
+--Т6 Инвест                       19263372717
+--Мировые инвестиции              4467428274
+--Типовой                         3879255171
+--Инвест Проект                   3894804468
+
+Select * FROM DWH.tab_user where department is not null;
+
+
+
+
+select * from DWH.tab_composite where lower(name) like lower('%Бизнес%');       ---3160242815
+select * from DWH.tab_composite where lower(name) like lower('%Сбалансированный%');  ---5899125073
+select * from DWH.TAB_PRODUCT t where t.composite_id = '5899125073';
+
+select  t.contract_number AS "Договор", SUM(c.amount) AS "Остаток", v.investor_id, v.name AS "ФИО", t.contract_date from DWH.tab_contract t
+left join DWH.tab_investor v ON v.investor_id=t.investor_id
+left join DWH.tab_cashflow_in c ON c.investor_id=t.investor_id
+where composite_id = 100150
+GROUP BY t.contract_number, v.investor_id, v.name, t.contract_date;
+---Определить стратегию используя код продукта АБ
+select * from DWH.TAB_PRODUCT t where t.alfabank_id = 'I19';
+select * from DWH.tab_composite where lower(name) like lower('%Казначей%');
+select * from du.TAB_STRATEGY;
+select * from du.TAB_STRATEGY@du
+
+SELECT DISTINCT t.STRATEGY_ID, t.NAME, t.status, 
+case when BLOCK_SEVENTY =1 then 'Да'
+end AS "Разрешение от ИК для клиентов 65+"
+FROM du.TAB_STRATEGY@du t
+inner join DWH.tab_composite tc ON tc.du_id_strategy = t.strategy_id
+inner join DWH.TAB_PRODUCT tp ON tp.composite_id = tc.composite_id
+right join AGENT_ALFABANK_OUT.tab_ddu_contract tdc  ON tdc.product_aux_id = tp.alfabank_id
+where 
+--blocked = 0
+--and closing_date is null
+--and status = 'OPEN'
+ block_seventy = 1
+
+select * from DWH.tab_cashflow_in;
+select * from DWH.tab_contract_hist where composite_id = 3160242815 and hist_change_date$= '16.11.2022';
+
+
+
+SELECT tc2.LASTNAME || ' ' ||  tc2.FIRSTNAME  || ' ' ||  tc2.MIDDLENAME, tcd.DOCUMENT_NUMBER, tcd.SIGNED, tcd.SIGN, lk2.last_name  || ' ' ||  lk2.first_name, z.parentuser_name AS "Директор департамента From CRM"
+FROM Du.TAB_CONTRACT_DOCUMENT tcd
+LEFT JOIN du.TAB_CONTRACT tc ON tc.CONTRACT_ID = tcd.CONTRACT_ID 
+LEFT JOIN du.TAB_CUSTOMER tc2 ON tc2.CUSTOMER_ID = tc.CUSTOMER_ID 
+LEFT JOIN SS_DATALINK.mv_investor@lk lk ON lk.crm_id$ = tc2.crm_id 
+LEFT JOIN SS_DATALINK.mv_user@lk lk2 ON lk2.user_id = lk.user_id 
+LEFT JOIN rep_crm2015.tab_user@dwh z ON z.uk$ = lk2.user_id
+WHERE TEMPLATE_ID = 339700235 AND DELETED = 0
+order by tcd.signed desc;
+
+
+
+select DISTINCT v.contract_number,  z.name, (t.last_name || ' ' || t.first_name) as IK, 
+case when v.composite_id = 6141422586 then 'Альфа Pre-IPO'
+      end AS Product
+from DWH.tab_contract v
+left join DWH.tab_investor z ON z.investor_id = v.investor_id
+left join DWH.TAB_USER t ON t.user_id = z.user_id
+left join dwh.tab_contract_aum c ON c.contract_id = v.contract_id
+where composite_id = 6141422586
+AND v.stop_date > sysdate
+ORDER BY 1;
+--AND aum_date = '14.10.2022'
+--GROUP BY v.contract_number, z.name, v.composite_id, t.last_name || ' ' || t.first_name,
+--case when v.composite_id = '100081' then 'Альфа Портфель PRE-IPO Цифровая инфраструктура'
+     --when v.composite_id = '100080' then 'Альфа Портфель PRE-IPO 2.0'    
+     --when v.composite_id = '100116' then 'Альфа Верные решения' end;
+
+select * from DWH.VIE_AM_ASSET_OPERATION;
+
+select * from DWH.vie_am_oper_actual;
+select * from mis.vie_aum_mf where mf_value_rub <> 0;
+
+select * from dwh.tab_contract_aum
+
+----Вывести все договоры c 01/01/2023 по АК, не закрытые, сумма баланса чтоб на 21.02.2023 была = 0
+select ti.name, tc.contract_date, tc.contract_number_norm, ts.status_id, ts.name AS "Статус договора", SUM(tca.position_value), tca.aum_date from DWH.tab_investor ti
+join DWH.tab_contract tc on ti.investor_id = tc.investor_id
+join REP_DU.tab_contract rtc on rtc.uk$ = tc.contract_id
+join DU.tab_status@du ts on ts.status_id = rtc.status_id
+join dwh.tab_contract_aum tca ON tca.contract_id = tc.contract_id 
+where trunc(tc.contract_date) = to_date ('21.02.2023', 'dd.mm.yyyy') 
+and tc.org_id = 1697
+and ts.name in ('Введен в систему', 'Подписан', 'Проверен')
+and tc.stop_date >  to_date ('21.02.2023', 'dd.mm.yyyy')
+and tca.aum_date =  to_date ('21.02.2023', 'dd.mm.yyyy')
+---and tc.contract_id = 39768910862
+GROUP BY ti.name, tc.contract_date, tc.contract_number_norm, ts.status_id, ts.name, tca.aum_date
+having SUM(tca.position_value) =0
+order by 2,7;
+
+-- Выгрузка стратегий МК ИИС АЛЬФА МОЙ КАПИТАЛ и АЛЬФА МОЙ КАПИТАЛ  SOF-78111
+select  z.name AS "ФИО Клиента", v.contract_number_norm AS "Номер договора", v.investment_start_date AS "Дата заключения договора",  
+CASE 
+WHEN dtc.investment_horizon_id = 1 THEN '0-5'
+WHEN dtc.investment_horizon_id = 2 THEN '6-10'
+ELSE '11-15' END AS "Горизонт инвестирования (лет)",
+c.position_value AS "СЧА", c.aum_date AS "На дату", c.investment, v.contract_id
+from DWH.tab_contract v
+left join DWH.tab_investor z ON z.investor_id = v.investor_id
+left join dwh.tab_contract_aum c ON c.contract_id = v.contract_id
+left join du.tab_contract@du dtc ON dtc.contract_id = v.du_contract_id
+where v.composite_id IN (100018, 100019) ---where composite_id IN (100081, 100080, 100116)
+AND trunc(aum_date) = to_date ('13.03.2023', 'dd.mm.yyyy') 
+AND v.org_id = 1697
+AND trunc(v.stop_date) > to_date ('13.03.2023', 'dd.mm.yyyy') 
+AND lower(c.investment) not like lower('Расчеты%')
+ORDER BY 2, 7;
+
+select * from dwh.tab_org;
+select * from dwh.tab_contract_aum where contract_id = 50004476923 and trunc(aum_date) = to_date ('24.04.2023', 'dd.mm.yyyy');
+select * from REP_DU.tab_contract;
+select * from DWH.tab_contract where contract_number_norm = '1341235/ДУ-ФЛ-2023';
+select * from DWH.tab_investor;
+--
+---Клиенты Бабияна ПИФ РЕСУРСЫ в ДУ
+select DISTINCT(ti.name) --, tc.contract_number--, tc.stop_date, moa.fund_id
+--, moa.*
+from DWH.vie_mf_oper_actual moa
+join dwh.tab_investor ti ON ti.investor_id = moa.investor_id
+join DWH.tab_contract tc ON tc.investor_id = ti.investor_id
+where ti.user_id = 509 and ti.state <> 'Погашен' and ti.legal_entity = 0
+and moa.fund_id = 49064046
+AND moa.oper_type = 'Выдача паев'
+AND moa.order_type = 'ЗаявкаНаВыдачуПаев'
+--AND moa.order_type = 'Погашение паев'
+and tc.stop_date = '01.01.9999'
+and moa.contract_id is NOT Null;
+
+
+
+
+select tc.contract_number_norm, ti.name,tu.first_name||' ' ||tu.last_name AS "ИК", ts.name AS "Статус договора", tstr.name AS "STRATEGY", tos.name AS "ППЗ", SUM(tca.position_value) AS "СЧА", tca.aum_date from DWH.tab_investor ti
+join DWH.tab_contract tc on ti.investor_id = tc.investor_id
+join REP_DU.tab_contract rtc on rtc.uk$ = tc.contract_id
+join DU.tab_status@du ts on ts.status_id = rtc.status_id
+join dwh.tab_contract_aum tca ON tca.contract_id = tc.contract_id 
+join DU.tab_strategy@du tstr ON tstr.STRATEGY_ID = rtc.STRATEGY_ID
+join dwh.tab_user tu on tu.user_id = ti.user_id
+join DWH.TAB_POINT_OF_SALE tos ON tos.point_of_sale_id = tc.point_of_sale_id
+
+where ts.name = 'Введен в систему'
+and tstr.name = 'Альфа Коммерческие метры'
+and tca.aum_date >= to_date ('12.09.2023', 'dd.mm.yyyy')
+GROUP BY ti.name, tc.contract_number_norm,tu.first_name||' ' ||tu.last_name, tstr.name, ts.status_id, ts.name, tca.aum_date,tos.name;
+
+
+
+---Насте SOF-89593
+
+select * from REP_DU.tab_agent;
+select * from DWH.tab_composite where lower(name) like lower('%Глобальные%');
+select * from dwh.tab_sales_channel;
+select * from dwh.tab_sales_channel_group;
+
+select tc.contract_number_norm, ti.name AS "ФИО", ti.alfabank_client_id, tcm.name AS "Название стратегии", tos.name AS "ППЗ", (tu.first_name || ' ' || tu.last_name) AS "ИК", tu.mail, tu.mobile from DWH.tab_contract tc
+join DWH.tab_composite tcm ON tcm.composite_id = tc.composite_id
+join DWH.TAB_POINT_OF_SALE tos ON tos.point_of_sale_id = tc.point_of_sale_id
+join DWH.tab_investor ti ON ti.investor_id = tc.investor_id
+join DWH.TAB_USER tu ON tu.user_id = ti.user_id
+--join DU.tab_territorial_division@du td ON td.territorial_division_id = tos.du_territorial_division_id
+--join DU.tab_agent_app@du aa ON aa.agent_id = td.agent_id
+where tc.contract_number_norm IN ( '') order by tc.contract_number_norm;
+
+
+
+---Вводы, срочно нужна выгрузка по Альфа российский бизнес SOF-90442
+select * from DWH.tab_cashflow_in order by wiring_date desc;
+select * from DWH.tab_composite where lower(name) like lower('%Российский%');
+select * from dwh.tab_investor;
+select * from DWH.TAB_USER;
+select * from DWH.TAB_CONTRACT;
+
+
+select tci.wiring_date AS "Дата", tc.contract_number_norm AS "Номер договора", tci.name, tci.amount AS "Сумма ввода",(tu.first_name || ' ' || tu.last_name) AS "ИК"  from DWH.TAB_CONTRACT tc
+left join dwh.tab_investor ti ON ti.investor_id = tc.investor_id
+left join DWH.TAB_USER tu ON tu.user_id = ti.user_id
+left join DWH.tab_cashflow_in tci ON tci.contract_id = tc.contract_id
+where tc.composite_id = 100150
+and tci.org_id = 1697
+order by 1 desc;
+
+--Прошу сформировать выгрузку клиентов, закрепленных за мной в эксель . В столбцах необходимы следующие параметры: SOF-90887
+--Консультант	INVESTOR ID	ФИО	Email	Сумма активов	EMPLOYEE_BRANCH_NAME	EMPLOYEE_NAME
+select (tu.last_name || ' ' || tu.first_name) AS "Консультант", ti.investor_id, ti.name AS "ФИО", nvl(ti.email_crm, ti.email) AS "MAIL", tc.contract_number_norm, SUM(tca.position_value) as "СЧА",
+csd.EMPLOYEE_BRANCH_NAME, csd.EMPLOYEE_NAME, csd.client_pin
+from DWH.tab_investor ti
+left join DWH.TAB_USER tu ON tu.user_id = ti.user_id
+left join DWH.tab_contract tc ON tc.investor_id = ti.investor_id
+left join DWH.tab_contract_aum tca ON tca.contract_id = tc.contract_id
+left join AGENT_ALFABANK.clientprofile_sstat_dmout csd ON csd.client_pin = ti.alfabank_client_id
+
+where ti.user_id = 60462458336
+and tc.stop_date = to_date ('01.01.9999', 'dd.mm.yyyy') 
+and tca.aum_date = to_date ('10.10.2023', 'dd.mm.yyyy')
+and csd.as_of_day = to_date ('07.09.2023', 'dd.mm.yyyy')
+GROUP BY (tu.last_name || ' ' || tu.first_name), ti.investor_id, ti.name, nvl(ti.email_crm, ti.email), tc.contract_number_norm, csd.EMPLOYEE_BRANCH_NAME, csd.EMPLOYEE_NAME, csd.client_pin;
+
+
+
+
+select * from dwh.tab_contract_aum tca where tca.aum_date = to_date ('29.12.2022', 'dd.mm.yyyy');
+
+---Для Марины ОПП при налогах (ИК + Директор деп)
+select tmp.column1, ti.name AS "ФИО клиента", (tu.last_name  || ' ' || tu.first_name ) as IK, REPLACE(tu.parentuser_name, ',') AS "Директор департамента" from dwh.tmp0_UDO tmp
+left join DWH.tab_contract tc ON tc.contract_number_norm = tmp.column1
+left join DWH.tab_investor ti ON ti.investor_id = tc.investor_id
+left join DWH.TAB_USER tu ON tu.user_id = ti.user_id
+order by 1;
+
+
+select ti.name AS FIO, (tu.last_name  || ' ' || tu.first_name ) as IK, REPLACE(tu.parentuser_name, ',' , '') AS "Директор департамента", 
+ti.document_series || ' ' || ti.document_number as Pasport from DWH.tab_investor ti
+join DWH.TAB_USER tu ON tu.user_id = ti.user_id
+where ti.document_series || ' ' || ti.document_number IN ('1417 653097') order by Pasport;
+
+select * from DWH.TAB_USER
+select * from REP_CRM2015.tab_user where UK$ IN (2883080189,
+15588109433,
+98585577773) ;
+
+select tc.contract_number_norm AS "Договор", ti.name AS "ФИО клиента", ti.investor_id AS "DWH_ID", tu.user_id AS "IK_DWH_ID", tu.last_name || ' ' || tu.first_name AS "ИК", 
+REPLACE(tu.parentuser_name, ',' , '') AS "Директор департамента", 
+tp.name, NVL(tu.department, 'не указан' ), NVL(tu.direction, 'не указан') 
+from DWH.tab_contract tc
+left join DWH.TAB_POINT_OF_SALE tp ON tp.point_of_sale_id = tc.point_of_sale_id
+left join DWH.tab_investor ti ON ti.investor_id = tc.investor_id
+left join DWH.TAB_USER tu ON tu.user_id = ti.user_id
+--join REP_CRM2015.tab_user crm ON uk$ = tu.user_id
+where tc.contract_number_norm IN ('',
+'' ) order by 1;
+
+----Выгрузка для Стаса П, по ППЗ клиентских каналов
+select tc.contract_number_norm, ti.name, tc.stop_date, tp.name from DWH.tab_contract tc 
+left join DWH.tab_investor ti ON ti.investor_id = tc.investor_id
+left join DWH.TAB_POINT_OF_SALE tp ON tp.point_of_sale_id = tc.point_of_sale_id
+where tc.point_of_sale_id IN (4056285411, 4056285413, 5995634523, 5995634524, 5995634525, 5995634526, 5995634527, 5995634528, 5995634529, 5995634530, 5995634531, 27896320443, 27896320444, 
+33514702438, 33514702439, 33766283454, 33766283455, 42001977434, 42001977435, 42001977436, 42001977437, 42001977438, 42001977439, 42001977440, 42001977441, 42001977442, 42001977443, 42001977444, 42001977445, 
+50403932143, 55516132671, 55516132672, 63124067151, 65295251178, 65295251179, 65295251180, 65295251181, 65295251182, 65295251183, 65295251184) and trunc(tc.stop_date) = to_date ('01.01.9999', 'dd.mm.yyyy');
+select * from DWH.TAB_POINT_OF_SALE
+
+select * from DWH.tab_contract where contract_number_norm like '%141379/ДУ-ФЛ-2020%';
+select * from DWH.tab_contract where contract_number_norm = '141379/ДУ-ФЛ-2020';
+select * from DWH.TAB_POINT_OF_SALE
+select * from DWH.TAB_POINT_OF_SALE
+select * from  dwh.tab_contract_aum tca where  tca.aum_date = '30.01.2024' and tca.contract_id = 13445833878;
+
+select tca.contract_id, tca.aum_date, tca.investment, tca.position_value, tc.contract_number_norm from dwh.tab_contract_aum tca 
+inner join DWH.tab_contract tc ON tc.contract_id = tca.contract_id
+where  trunc(tca.aum_date) = to_date ('30.01.2024', 'dd.mm.yyyy')
+and tc.contract_number_norm = '141379/ДУ-ФЛ-2020';
+
+
+
+with rest AS (select tc.contract_number_norm, ti.name, tc.stop_date, tp.name, tc.cash_in_date as "Дата ввода", tca.CONTRACT_ID from DWH.tab_contract tc 
+left join DWH.tab_investor ti ON ti.investor_id = tc.investor_id
+left join DWH.tab_contract_aum tca on tca.CONTRACT_ID = tc.CONTRACT_ID
+left join DWH.TAB_POINT_OF_SALE tp ON tp.point_of_sale_id = tc.point_of_sale_id
+where tc.point_of_sale_id IN (469322422, 57257367207, 57257367208, 57257367209, 57257367210, 57257367212, 57257367213, 57257367214, 57257367215, 57257367216, 57257367217, 57257367218, 
+57257367219, 57257367220, 57257367221, 57257367222, 57257367223, 57257367224, 57257367225, 57257367226, 57257367637, 57257367638, 57257367639, 57257367640, 
+57257367641, 57257367642, 57257367643, 57257367644, 57257367645, 57257367646, 57257367657, 57257367658, 57257367659, 57257367660, 57257367661, 57257367662, 
+57257367663, 57257367664, 57257367665, 57257367666, 57257368057, 57257368058, 57257368059, 57257368060, 57257368061, 57257368062, 57257368063, 57257368064, 
+57257368065, 57257368066, 57257368067, 57257368068, 57257368069, 57257368070, 57257368071, 57257368072, 57257368073, 57257368074, 57257368075, 57257368076, 
+57257368269, 57257368270, 57257368271, 57257368272, 57257368273, 57257368274, 57257368275, 57257368276, 57257368277, 57257368278, 57257368279, 57257368280, 
+57257368281, 57257368282, 57257368283, 57257368284, 57257368285, 57257368286, 57257368287, 57257368288, 57257368289, 57257368290, 57257368292, 57257368293, 
+57257368294, 57257368295, 57257368300, 57257368302, 57257368304, 57257368305, 57257368307, 57257368308, 57257368309, 57257368310, 57257368311, 57257368312, 
+57257368318, 57257368320, 57257368328, 57257368329, 57257368330, 57257368331, 57257368332, 57257368333, 57257368334, 57257368335, 57257368336, 57257368337, 
+57257368338, 57257368339, 57257368340, 57257368342, 57257368343, 57257368344, 57257368345, 57257368346, 57257368347, 57257368348, 57257368349, 57257368350, 
+57257368351, 57257368352, 57257368353, 57257368354, 57257368355, 57257368356, 57257368357, 57257368358, 57257368359, 57257368360, 57257368362, 57257368363, 
+57257368364, 57257368365, 57257368366, 57257368367, 57257368368, 57257368369, 57257368371, 57257368372, 57257368373, 57257368374, 57257368375, 57257368376, 
+57257368377, 57257368378, 57257368379, 57257368380, 57257368381, 57257368382, 57257368383, 57257368384, 57257368385, 57257368386, 57257368387, 57257368388, 
+57257368389, 57257368390, 57257368391, 57257368392, 57257368393, 57257368394, 57257368395, 57257368396, 57257368397, 57257368398, 57257368399, 65981090229, 
+74472688542, 74554895738, 74554895739) 
+and trunc(tc.stop_date) = to_date ('01.01.9999', 'dd.mm.yyyy')
+and trunc(tca.aum_date) = to_date ('25.02.2024', 'dd.mm.yyyy')
+)
+
+select dtca.* from rest rt
+left join DWH.tab_contract_aum dtca on dtca.CONTRACT_ID = rt.CONTRACT_ID --and dtca.aum_date = rt.CID
+where  rt.CONTRACT_ID =59804740767 and dtca.aum_date = (select CID from rest where CONTRACT_ID =59804740767);
+
+
+
+
+--**************************************************************
+
+---От Юли Т с использованием номеров счетов
+WITH rest AS (select  tcm.NAME AS количество_активов, tcm.NAME,  tca.aum_date, tca.*  from dwh.tab_contract tc
+join DWH.tab_contract_aum tca on tca.CONTRACT_ID = tc.CONTRACT_ID
+join dwh.tab_composite tcm on tcm.COMPOSITE_ID = tc.COMPOSITE_ID 
+where tcm.COMPOSITE_ID in ('100032')
+and trunc(tc.STOP_DATE) = to_date ('01.01.9999', 'dd.mm.yyyy')
+and tca.aum_date = '25.02.2024'
+--and tca.asset_ID is not null
+ORDER BY tcm.NAME desc)
+
+select count(количество_активов), SUM(КЭШ) from rest
+;
+---tca.aum_date, tca.asset_id, tca.investment, tca.position_value as кэш
+
+
+
+select  count(tcm.NAME) as количество_активов,tcm.NAME,  tca.aum_date, sum(position_value) as кэш  from dwh.tab_contract tc
+join DWH.tab_contract_aum tca on tca.CONTRACT_ID = tc.CONTRACT_ID
+join dwh.tab_composite tcm on tcm.COMPOSITE_ID = tc.COMPOSITE_ID 
+where tcm.COMPOSITE_ID in ('100061','100075','100052','100087','100060','100032','100074','100053','100086','4911352316')
+and trunc(tc.STOP_DATE) = to_date ('01.01.9999', 'dd.mm.yyyy')
+and tca.aum_date = '26.02.2024'
+and tca.asset_ID is not null
+GROUP BY tcm.NAME,tca.aum_date
+ORDER BY tcm.NAME desc;
+
+select distinct acc.name,acc.account_number from DWH.tab_contract_aum aum
+join DWH.tab_contract c on aum.CONTRACT_ID = c.CONTRACT_ID
+join dwh.tab_composite com on c.COMPOSITE_ID = com.COMPOSITE_ID 
+join DWH.tab_acc_plan_account acc on aum.acc_plan_account_id=acc.acc_plan_account_id
+where com.COMPOSITE_ID in ('100061','100075','100052','100087','100060','100032','100074','100053','100086','4911352316')
+and trunc(c.STOP_DATE) = to_date ('01.01.9999', 'dd.mm.yyyy')
+and aum.aum_date = '26.02.2024';
+
+select distinct acc.name,acc.account_number from DWH.tab_contract_aum aum
+join DWH.tab_contract c on aum.CONTRACT_ID = c.CONTRACT_ID
+join dwh.tab_composite com on c.COMPOSITE_ID = com.COMPOSITE_ID 
+join DWH.tab_acc_plan_account acc on aum.acc_plan_account_id=acc.acc_plan_account_id
+where com.COMPOSITE_ID in ('100061','100075','100052','100087','100060','100032','100074','100053','100086','4911352316')
+and trunc(c.STOP_DATE) = to_date ('01.01.9999', 'dd.mm.yyyy')
+and aum.aum_date = '26.02.2024'
+and aum.position_currency_id is not null;
+
+select distinct acc.name,acc.account_number from DWH.tab_contract_aum aum
+join DWH.tab_contract c on aum.CONTRACT_ID = c.CONTRACT_ID
+join dwh.tab_composite com on c.COMPOSITE_ID = com.COMPOSITE_ID 
+join DWH.tab_acc_plan_account acc on aum.acc_plan_account_id=acc.acc_plan_account_id
+where com.COMPOSITE_ID in ('100061','100075','100052','100087','100060','100032','100074','100053','100086','4911352316')
+and trunc(c.STOP_DATE) = to_date ('01.01.9999', 'dd.mm.yyyy')
+and aum.aum_date = '26.02.2024'
+and aum.asset_id is not null;
+
+--КЭШ
+select  count(tcm.NAME) as количество_активов,tcm.NAME,  tca.aum_date, sum(position_value) as кэш  from dwh.tab_contract tc
+join DWH.tab_contract_aum tca on tca.CONTRACT_ID = tc.CONTRACT_ID
+join dwh.tab_composite tcm on tcm.COMPOSITE_ID = tc.COMPOSITE_ID 
+join DWH.tab_acc_plan_account acc on tca.acc_plan_account_id=acc.acc_plan_account_id
+where tcm.COMPOSITE_ID in ('100061','100075','100052','100087','100060','100032','100074','100053','100086','4911352316')
+and trunc(tc.STOP_DATE) = to_date ('01.01.9999', 'dd.mm.yyyy')
+and tca.aum_date = '26.02.2024'
+--and tca.asset_ID is null
+--and tca.position_currency_id is not null
+and acc.account_number in ('51','52','55.01')  ---если по всем счетам клиента + 76.05 Расчеты с управляющей компанией
+GROUP BY tcm.NAME,tca.aum_date
+ORDER BY tcm.NAME desc;
+
+select * from DWH.tab_acc_plan_account tap where account_number in ('51','52','55.01');
+select * from DWH.tab_acc_plan_account tap where account_number like '76.%';
+
+
+select  tcm.NAME,tcm.NAME,  tca.aum_date, tca.* from dwh.tab_contract tc
+join DWH.tab_contract_aum tca on tca.CONTRACT_ID = tc.CONTRACT_ID
+join dwh.tab_composite tcm on tcm.COMPOSITE_ID = tc.COMPOSITE_ID 
+join DWH.tab_acc_plan_account acc on tca.acc_plan_account_id=acc.acc_plan_account_id
+where tcm.COMPOSITE_ID in ('100061','100075','100052','100087','100060','100032','100074','100053','100086','4911352316')
+and trunc(tc.STOP_DATE) = to_date ('01.01.9999', 'dd.mm.yyyy')
+and tca.aum_date = '26.02.2024'
+--and tca.asset_ID is null
+--and tca.position_currency_id is not null
+and acc.account_number in ('51','52','55.01')
+and tca.contract_id = 5699640379
+ORDER BY tca.contract_id;
+--************************************************************************************************************************************
+
+
+
+--Бумаги
+select  count(tcm.NAME) as количество_активов,tcm.NAME,  tca.aum_date, sum(position_value) as кэш  from dwh.tab_contract tc
+join DWH.tab_contract_aum tca on tca.CONTRACT_ID = tc.CONTRACT_ID
+join dwh.tab_composite tcm on tcm.COMPOSITE_ID = tc.COMPOSITE_ID 
+join DWH.tab_acc_plan_account acc on tca.acc_plan_account_id=acc.acc_plan_account_id
+where tcm.COMPOSITE_ID in ('100061','100075','100052','100087','100060','100032','100074','100053','100086','4911352316')
+and trunc(tc.STOP_DATE) = to_date ('01.01.9999', 'dd.mm.yyyy')
+and tca.aum_date = '26.02.2024'
+and tca.asset_ID is null
+--and tca.position_currency_id is not null
+--and acc.account_number in ('51','52','55.01')
+GROUP BY tcm.NAME,tca.aum_date
+ORDER BY tcm.NAME desc;
+
+--**************************************************************
+--Серафиме В сча по ПФР (СОЦИАЛЬНЫЙ ФОНД РОССИИ) SOF-102622
+select aum_date, sum(position_value) from DWH.tab_contract_aum where contract_id = 1150885 and aum_date >= '01.01.2024' GROUP by aum_date order by aum_date;
+
+
+---СДУ Складская недвижимость + притоки
+Select * from DWH.tab_contract where composite_id = 100596 and stop_date = '01.01.99' ;
+Select tc.contract_number, tci.* from DWH.tab_contract tc
+inner join DWH.tab_cashflow_in tci ON tci.contract_id = tc.contract_id
+where 
+--tc.contract_id = 71576898617 
+
+tc.composite_id = 100596
+and tc.stop_date = '01.01.9999';
+
+
+select distinct tl.name, tl.fund_id, tl.mfee from analyst.vie_fund tl 
+where alfabank_code is not null;
+
+SELECT FUND_ID,
+          NAME,
+          FULL_NAME,
+          CODE,
+          MFEE,
+          REG_NUMBER,
+          REG_DATE,
+          REG_ISSUER,
+          SHARES_MFU,
+          DISCOUNT_ID,
+          FUND_CLASS,
+          FUND_TYPE,
+          CHANGE_DATE$,
+          ALFABANK_CODE,
+          RISK,
+          ASSET_ID,
+          DU_FUND_ID
+     FROM dwh.TAB_FUND;
+     
+     
+------Сверка МК и АК
+select tc.* from dwh.tab_investor ti
+join DWH.tab_contract tc ON ti.investor_id = tc.investor_id
+--join REP_DU.TAB_CONTRACT dtc ON dtc.contract_id = tc.du_contract_id
+where trunc(tc.stop_date) = to_date ('01.01.9999', 'dd.mm.yyyy')
+and ti.investor_id IN ( 1123371, 78746158910 );
+ 
+select o.name, ti.investor_id, tc.* from dwh.tab_investor ti
+join DWH.tab_contract tc ON ti.investor_id = tc.investor_id
+left join dwh.tab_org o on tc.org_id = o.org_id
+--join REP_DU.TAB_CONTRACT dtc ON dtc.contract_id = tc.du_contract_id
+where 
+--trunc(tc.stop_date) = to_date ('01.01.9999', 'dd.mm.yyyy')and 
+ti.investor_id IN ( 27254785907
+);
+
+
+select distinct ti.name, ti.birthday, ti.investor_id,
+CASE WHEN tc.org_id = '1697' then 'АК'
+     WHEN tc.org_id = '2100' then 'MК'
+END as "Компания"
+--CASE WHEN tc.org_id = '2100' then 'MК' END
+     
+from dwh.tab_investor ti
+join DWH.tab_contract tc ON ti.investor_id = tc.investor_id
+left join dwh.tab_org o on tc.org_id = o.org_id
+--join REP_DU.TAB_CONTRACT dtc ON dtc.contract_id = tc.du_contract_id
+where trunc(tc.stop_date) = to_date ('01.01.9999', 'dd.mm.yyyy')
+and ti.investor_id IN ( 15409769496, 17102038898 ) order by 1;
+
+select * from REP_DU.TAB_CONTRACT c where c.CONTRACT_NUMBER_PREFIX like '348822/ДУ-ФЛ-2021%';
+
+
+select distinct ti.name, ti.investor_id,
+Listagg(tc.org_id, ', ') Within Group( Order By ti.name )
+from dwh.tab_investor ti
+join DWH.tab_contract tc ON ti.investor_id = tc.investor_id
+left join dwh.tab_org o on tc.org_id = o.org_id
+--join REP_DU.TAB_CONTRACT dtc ON dtc.contract_id = tc.du_contract_id
+where trunc(tc.stop_date) = to_date ('01.01.9999', 'dd.mm.yyyy')
+and ti.investor_id IN ( 15409769496, 17102038898 ) group by ti.name, ti.investor_id ;
+
+---Пример от Саши
+Select Isin, Listagg(Ticker_Name,',') Within Group( Order By Ticker_Name ) as STR
+   From Dwh.Tab_Structural_Notes_Tickers Where Isin = 'XS1578214741' group by Isin;
+   
+   
+select distinct ti.name, ti.birthday, ti.investor_id,
+CASE WHEN tc.org_id = '1697' then 'АК'
+     WHEN tc.org_id = '2100' then 'MК'
+END as "Компания"
+from dwh.tab_investor ti
+join DWH.tab_contract tc ON ti.investor_id = tc.investor_id
+left join dwh.tab_org o on tc.org_id = o.org_id
+--join REP_DU.TAB_CONTRACT dtc ON dtc.contract_id = tc.du_contract_id
+where trunc(tc.stop_date) = to_date ('01.01.9999', 'dd.mm.yyyy')
+and ti.investor_id IN 
+
+
+
+
+select distinct ti.name, ti.investor_id,
+Listagg(tc.org_id, ', ') Within Group( Order By ti.name )
+from dwh.tab_investor ti
+join DWH.tab_contract tc ON ti.investor_id = tc.investor_id
+left join dwh.tab_org o on tc.org_id = o.org_id
+--join REP_DU.TAB_CONTRACT dtc ON dtc.contract_id = tc.du_contract_id
+where trunc(tc.stop_date) = to_date ('01.01.9999', 'dd.mm.yyyy')
+and ti.investor_id IN 
+( 33723677927,
+22139641565,
+38558778845,
+11178854232 ) group by ti.name, ti.investor_id order by 1;
+
+
+----Попочь Артему
+select  ti.investor_id,ti.name as ФИО,ti.BIRTHDAY, vca.AMOUNT as Сумма_ввода, ti.CELL_PHONE_LATEST, ti.JURE_ADDRESS, ti.REAL_ADDRESS,tf.name as ИПИФ 
+from dwh.tab_investor ti
+
+join Dwh.Tab_Mf_Order tmo on ti.investor_id = tmo.investor_id
+join DWH.tab_fund tf on tmo.FUND_ID = tf.FUND_ID
+join mis.VIE_CASHFLOW_ALL vca on tf.FUND_ID = vca.FUND_ID and ti.INVESTOR_ID = vca.INVESTOR_ID
+
+where NOT EXISTS (select * from dwh.tmp0_UDO t where t.COLUMN1 = ti.investor_id ) and 
+     --EXISTS (select * from dwh.tmp0_UDO t where t.COLUMN1 = ti.investor_id ) and
+    tf.FUND_ID in('49064042','1299643441','12846583767','12846583768','12846583769','31820427357','31820427358','31820427359','84303233599')
+    and (ti.CELL_PHONE_LATEST is not null) 
+    and ti.CRM_ID$ is null
+    --and ti.investor_id not in (select COLUMN1 from dwh.tmp0_UDO)
+    
+    
+    
+group by ti.investor_id,ti.name,ti.BIRTHDAY, vca.AMOUNT,
+    ti.CELL_PHONE_LATEST, 
+    ti.JURE_ADDRESS, ti.REAL_ADDRESS,tf.name
+order by 1
+--vca.AMOUNT desc;
+---
+select * from dwh.tmp0_UDO
+select COLUMN1, COUNT(*) from dwh.tmp0_UDO
+GROUP by COLUMN1
+HAVING COUNT(*) > 1 order by 1;
+
+
+
+select * from DWH.tab_composite;
+select * from dwh.tmp0_UDO;
+select * from DWH.tab_contract where contract_number_norm like '199515/%';
+
+select * from dwh.tmp0_UDO;
+delete dwh.tmp0_UDO;
+
+select ud.column1, tc.composite_id, cmp.name from dwh.tmp0_UDO ud
+left join DWH.tab_contract tc ON tc.contract_number_norm = ud.column1 
+left join DWH.tab_composite cmp ON cmp.composite_id = tc.composite_id;
+----Депозиты, выгрузка с разбивкой по банку, сроку, ставке 
+select  (t_i_d.issue_date - t_i_d.maturity_date) AS Period_day
+from DWH.tab_contract_aum  t_c_aum
+join dwh.TAB_CONTRACT t_c on t_c_aum.CONTRACT_ID = t_c.CONTRACT_ID
+join DWH.tab_composite t_com on t_c.COMPOSITE_ID = t_com.COMPOSITE_ID
+join dwh.TAB_INVESTOR_DEPOSIT t_i_d on t_c_aum.INVESTOR_DEPOSIT_ID = t_i_d.INVESTOR_DEPOSIT_ID
+where aum_date='31/08/2024' and t_c_aum.investor_deposit_id is not null
+                                and t_com.is_idu = 1
+                                and t_i_d.investor_id = 4248417905; 
+                                                                  
+                                                                
+select ti.name, t_c.contract_number_norm, t_c_aum.investment, t_c_aum.position_value, t_i_d.rate, t_i_d.maturity_date AS Begin_depo, t_i_d.issue_date AS End_depo,
+(t_i_d.issue_date - t_i_d.maturity_date) AS Period_day
+from DWH.tab_contract_aum  t_c_aum
+join dwh.TAB_CONTRACT t_c on t_c_aum.CONTRACT_ID = t_c.CONTRACT_ID
+join DWH.tab_investor ti ON ti.investor_id = t_c.investor_id
+join DWH.tab_composite t_com on t_c.COMPOSITE_ID = t_com.COMPOSITE_ID
+join dwh.TAB_INVESTOR_DEPOSIT t_i_d on t_c_aum.INVESTOR_DEPOSIT_ID = t_i_d.INVESTOR_DEPOSIT_ID
+where aum_date='08/09/2024' and t_c_aum.investor_deposit_id is not null
+                                and t_com.is_idu = 1
+                                and t_c.org_id = 1697
+                                and trunc(t_c.stop_date) = to_date ('01.01.9999', 'dd.mm.yyyy')
+                                order by 2;  
+
+
+
+
+with rest AS  
+(select tc.contract_number_norm, ti.name, atd.client_aux_id, tca.position_value, tc.stop_date   /* tc.stop_date, tca.* */   
+from AGENT_ALFABANK_OUT.tab_ddu_contract atd 
+inner join DWH.tab_investor ti ON ti.alfabank_client_id = atd.client_aux_id
+inner join DWH.tab_contract tc ON tc.investor_id = ti.investor_id
+inner join DWH.tab_contract_aum tca ON tca.contract_id = tc.contract_id                           
+where 
+trunc(tca.aum_date) = to_date ('14.03.2023', 'dd.mm.yyyy')
+and tc.org_id = 1697
+and atd.client_aux_id <> '-'
+and trunc(tc.stop_date) > to_date ('14.03.2023', 'dd.mm.yyyy')  -----between to_date ('24.02.2022', 'dd.mm.yyyy') and to_date ('28.01.2023', 'dd.mm.yyyy')
+---and lower(tca.investment) not like lower('%р/с%')
+and tc.composite_id IN ('100032', '100046', '100050', '100052', '100053', '100066', '100076', '100077', '100086', '100087', '4330693961', '4911352316', '5826119311',
+'6979047034', '8934562803', '9933430719', '9933430720', '9933430721', '10163189059', '13303840594')
+and ti.legal_entity <> 1  
+and tca.asset_id is not null
+and tc.point_of_sale_id NOT IN('469321639', '469322622', '469322630', '469323052', '469323185', '469323310', '469323329', '469323433', '2768276641', '2804627921', 
+'2882877902', '2908493422', '3126172042', '3189220582', '3215223791', '3263034685', '3508748489', '3624317114', '4732468752', '18420101099', '19841298761', '20755773234')
+AND lower(tc.contract_number) not like lower('%умер%') 
+--AND ti.name = ''
+ORDER BY 1, 5)
+
+Select contract_number_norm AS "Номер договора", name AS "ФИО", client_aux_id, SUM(position_value) as "СУММА заблокированных активов", stop_date AS "Дата закрытия"
+FROM rest
+GROUP BY contract_number_norm, name, client_aux_id, stop_date
+Order by 1, 5;
+
+select * from AGENT_ALFABANK_OUT.tab_ddu_contract atd 
+inner join DWH.tab_investor ti ON ti.alfabank_client_id = atd.client_aux_id 
+inner join DWH.tab_contract tc ON tc.investor_id = ti.investor_id
+where ti.name = 'Ревзин Александр Дмитриевич'
+and atd.status_id = 249;
+
+select * from DWH.tab_contract_aum tca 
+inner join DWH.tab_contract tc ON tca.contract_id = tc.contract_id                           
+where 
+trunc(tca.aum_date) = to_date ('12.09.2024', 'dd.mm.yyyy')
+and tc.contract_id = 9627148394
+and atd.status_id = 249;
+
+select * from DWH.tab_contract_aum tca where tca.contract_id = 9627148394 and trunc(tca.aum_date) = to_date ('12.09.2024', 'dd.mm.yyyy') and tca.asset_id is not null
+
+select tc.contract_number_norm, 
+       ti.name, 
+       atd.client_aux_id, 
+       SUM(tca.position_value), 
+       tc.stop_date   /* tc.stop_date, tca.* */   
+from AGENT_ALFABANK_OUT.tab_ddu_contract atd 
+inner join DWH.tab_investor ti ON ti.alfabank_client_id = atd.client_aux_id
+inner join DWH.tab_contract tc ON tc.investor_id = ti.investor_id
+inner join DWH.tab_contract_aum tca ON tca.contract_id = tc.contract_id                           
+where 
+trunc(tca.aum_date) = to_date ('12.09.2024', 'dd.mm.yyyy')
+and tc.org_id = 1697
+and atd.client_aux_id <> '-'
+and trunc(tc.stop_date) > to_date ('14.03.2023', 'dd.mm.yyyy')  -----between to_date ('24.02.2022', 'dd.mm.yyyy') and to_date ('28.01.2023', 'dd.mm.yyyy')
+---and lower(tca.investment) not like lower('%р/с%')
+and tc.composite_id IN ('100032', '100046', '100050', '100052', '100053', '100066', '100076', '100077', '100086', '100087', '4330693961', '4911352316', '5826119311',
+'6979047034', '8934562803', '9933430719', '9933430720', '9933430721', '10163189059', '13303840594')
+and ti.legal_entity <> 1  
+and tca.asset_id is not null
+and tc.point_of_sale_id NOT IN('469321639', '469322622', '469322630', '469323052', '469323185', '469323310', '469323329', '469323433', '2768276641', '2804627921', 
+'2882877902', '2908493422', '3126172042', '3189220582', '3215223791', '3263034685', '3508748489', '3624317114', '4732468752', '18420101099', '19841298761', '20755773234')
+AND lower(tc.contract_number) not like lower('%умер%') 
+--AND ti.name = ''
+and atd.status_id = 249
+GROUP BY tc.contract_number_norm, ti.name, atd.client_aux_id, tc.stop_date
+ORDER BY 1;
+
+
+SELECT 
+        tc.contract_number_norm,
+        tc.CONTRACT_DATE,
+        tpos.name as ППЗ,
+        dte.EMAIL
+FROM dwh.tab_contract tc
+    JOIN DWH.tab_point_of_sale tpos ON tpos.point_of_sale_id = tc.point_of_sale_id
+    JOIN rep_DU.tab_contract dtc ON dtc.CONTRACT_NUMBER_PREFIX = tc.contract_number_norm
+    JOIN REP_DU.TAB_TERRITORIAL_DIVISION ttd ON ttd.TERRITORIAL_DIVISION_ID = dtc.TERRITORIAL_DIVISION_ID
+    JOIN rep_DU.tab_employee dte ON dte.EMPLOYEE_ID = dtc.EMPLOYEE_ID
+WHERE ttd.AGENT_ID = 24824559
+    AND tc.CONTRACT_DATE >= '01.01.2022'
+ORDER BY CONTRACT_DATE ASC;
+
+
+
+WITH rest AS (select tc.contract_number_norm, ti.name, tu.first_name||' ' ||tu .last_name AS "ИК", ts.name AS "Статус договора", tstr.name AS "STRATEGY", tos.name as "ППЗ" , SUM(tca.position_value) AS "СЧА", tca.aum_date from DWH.tab_investor ti
+join DWH.tab_contract tc on ti.investor_id = tc.investor_id
+join REP_DU.tab_contract rtc on rtc.uk$ = tc.contract_id
+join DU.tab_status@du ts on ts.status_id = rtc.status_id
+join dwh.tab_contract_aum tca ON tca.contract_id = tc.contract_id 
+join DU.tab_strategy@du tstr ON tstr.STRATEGY_ID = rtc.STRATEGY_ID
+join dwh.tab_user tu on tu.user_id = ti.user_id
+join DWH.TAB_POINT_OF_SALE tos ON tos.point_of_sale_id = tc.point_of_sale_id
+
+where ts.name = 'Введен в систему'
+--and tstr.name = 'Альфа Коммерческие метры'
+and tca.aum_date = to_date ('15.01.2025', 'dd.mm.yyyy')
+--and tca.position_value < 0 /* этим условием отбираются строки с позой менеьше нуля, а потом в селекте сумируются в итоге полная хня */
+--and tc.contract_number_norm = ''
+GROUP BY tc.contract_number_norm, ti.name, tu.first_name||' ' ||tu.last_name, ts.name, tstr.name, tca.aum_date, tos.name)
+
+select * from rest where СЧА like '%-%';
+
+select * from DWH.tab_contract tc where tc.contract_number_norm = '';
+
+select * from dwh.tab_contract_aum tca where tca.contract_id = 100471271299 and tca.aum_date = to_date ('15.01.2025', 'dd.mm.yyyy');
+
+
+---Выгрзка МОЙ КАПИТАЛ МК
+select ti.alfabank_client_id, tc.contract_number_norm from DWH.tab_contract tc 
+join DWH.tab_investor ti ON ti.investor_id = tc.investor_id
+where tc.org_id IN (2000,2100) and tc.stop_date = '01.01.9999' and 
+tc.contract_number_norm IN
+('') order by 2;
+
+
+---Доходность ОПИФ по формуле ДИТЦА / СЧА ОПИФ
+select * from MP.vie_positions;
+
+ Select * From Dwh.Tab_Mf_Order O
+join DWH.Tab_Mf_Oper op on Op.Order_Id = O.Mf_Order_Id
+where o.investor_id = 3962248304
+and O.Order_Type = 'ЗаявкаНаВыдачуПаев';
+
+Select  * From Dwh.Tab_Mf_Order O
+join DWH.Tab_Mf_Oper op on Op.Order_Id = O.Mf_Order_Id
+where o.order_number in 
+( '573.1991193831.030',
+'23.1991130432.003',
+'639.1991194273.015' )
+and O.Order_Type = 'ЗаявкаНаВыдачуПаев';
+---варианты
+SELECT 
+        O.order_number,
+        MIN(Op.Wiring_date) as min_wiring_date
+    FROM Dwh.Tab_Mf_Order O
+    JOIN DWH.Tab_Mf_Oper Op ON Op.Order_Id = O.Mf_Order_Id
+    WHERE O.order_number IN ('573.1991193831.030', '23.1991130432.003', '639.1991194273.015')
+    AND O.Order_Type = 'ЗаявкаНаВыдачуПаев'
+    GROUP BY O.order_number;
+ ---рабочий  чтоб увидеть полностью обе таблице с минимальной датой проводки
+SELECT 
+    O_cols.*,
+    Op_cols.*
+FROM (
+    SELECT 
+        O.*,
+        ROW_NUMBER() OVER (PARTITION BY O.order_number ORDER BY Op.Wiring_date) as rn
+    FROM Dwh.Tab_Mf_Order O
+    JOIN DWH.Tab_Mf_Oper Op ON Op.Order_Id = O.Mf_Order_Id
+    WHERE O.order_number IN ('573.1991193831.030', '23.1991130432.003', '639.1991194273.015')
+    AND O.Order_Type = 'ЗаявкаНаВыдачуПаев'
+) O_cols
+JOIN DWH.Tab_Mf_Oper Op_cols ON Op_cols.Order_Id = O_cols.Mf_Order_Id AND Op_cols.Wiring_date = (
+    SELECT MIN(Op2.Wiring_date)
+    FROM DWH.Tab_Mf_Oper Op2
+    WHERE Op2.Order_Id = O_cols.Mf_Order_Id
+)
+WHERE O_cols.rn = 1;
+
+
+--черновик
+SELECT * FROM (
+    SELECT 
+        O.Mf_Order_Id,
+        O.Order_Number,
+        O.Order_date,
+        O.Order_Type,
+        O.Order_status,
+        O.investor_id,
+        -- перечислите другие нужные столбцы из таблицы O
+        Op.Oper_type,
+        Op.Order_Id AS Op_Order_Id,
+        Op.Wiring_date,
+        Op.shares_qty, --AS кол-во,
+        Op.amount_rub, --AS Сумма,
+        -- перечислите другие нужные столбцы из таблицы Op
+        ROW_NUMBER() OVER (PARTITION BY O.order_number ORDER BY Op.Wiring_date) as rn
+    FROM Dwh.Tab_Mf_Order O
+    JOIN DWH.Tab_Mf_Oper Op ON Op.Order_Id = O.Mf_Order_Id
+    WHERE O.order_number IN ('573.1991193831.030', '23.1991130432.003', '639.1991194273.015')
+    AND O.Order_Type = 'ЗаявкаНаВыдачуПаев'
+) t
+WHERE rn = 1;
+
+
+---ПРОД вариант Выгрузка ОПИФ по списку заявок, видим ввод и оценку СЧА на тек. дату
+SELECT * FROM (
+    SELECT 
+        O.Mf_Order_Id,
+        O.Order_Number,
+        O.Order_date,
+        O.Order_Type,
+        O.Order_status,
+        O.investor_id,
+        -- перечислите другие нужные столбцы из таблицы O
+        Op.Oper_type,
+        Op.Order_Id AS Op_Order_Id,
+        Op.Wiring_date,
+        Op.shares_qty, --AS кол-во,
+        Op.amount_rub, --AS Сумма,
+        aum.MF_VALUE_RUB,
+        -- перечислите другие нужные столбцы из таблицы Op
+        ROW_NUMBER() OVER (PARTITION BY O.order_number ORDER BY Op.Wiring_date) as rn
+    FROM Dwh.Tab_Mf_Order O
+    JOIN DWH.Tab_Mf_Oper Op ON Op.Order_Id = O.Mf_Order_Id
+    join mis.vie_aum aum ON aum.investor_id = Op.investor_id and aum.fund_id = Op.Fund_id 
+    WHERE trunc(aum.aum_date) = to_date ('22.04.2025', 'dd.mm.yyyy')
+and O.order_number IN ('')
+    AND O.Order_Type = 'ЗаявкаНаВыдачуПаев'
+) t
+--WHERE rn > 1;
+
+
+SELECT * FROM (
+    SELECT 
+        O.Mf_Order_Id,
+        O.Order_Number,
+        O.Order_date,
+        O.Order_Type,
+        O.Order_status,
+        O.investor_id,
+        -- перечислите другие нужные столбцы из таблицы O
+        Op.Oper_type,
+        Op.Order_Id AS Op_Order_Id,
+        Op.Wiring_date,
+        Op.shares_qty, --AS кол-во,
+        Op.amount_rub, --AS Сумма,
+--aum.MF_VALUE_RUB,
+        -- перечислите другие нужные столбцы из таблицы Op
+        ROW_NUMBER() OVER (PARTITION BY O.order_number ORDER BY Op.Wiring_date) as rn
+    FROM Dwh.Tab_Mf_Order O
+    JOIN DWH.Tab_Mf_Oper Op ON Op.Order_Id = O.Mf_Order_Id
+--join mis.vie_aum aum ON aum.investor_id = Op.investor_id and aum.fund_id = Op.Fund_id 
+    WHERE 
+--trunc(aum.aum_date) = to_date ('22.04.2025', 'dd.mm.yyyy') and
+O.order_number IN ( '' )
+    AND O.Order_Type = 'ЗаявкаНаВыдачуПаев'
+) t
+WHERE rn = 1;
+
+
+select ti.investor_id, ti.name AS "ФИО Клиента", (tu.last_name  || ' ' || tu.first_name ) as IK, ti.crm_id$ AS "CRM_ID Клиента"  from dwh.tmp0_UDO UD
+join DWH.tab_investor ti on UD.COLUMN1 = ti.investor_id
+join DWH.TAB_USER tu on ti.user_id = tu.user_id order by 1;
+
+select tc.contract_number_norm, ti.investor_id AS "CLIENT_DWH_ID", ti.name, tu.user_id AS "IK_DWH_ID", (tu.last_name  || ' ' || tu.first_name) as IK, 
+REPLACE(tu.parentuser_name, ',') AS "Директор департамента" from dwh.tmp0_UDO tmp
+join DWH.tab_contract tc ON tc.contract_number_norm = tmp.column1
+join DWH.tab_investor ti on ti.investor_id = tc.investor_id
+join DWH.TAB_USER tu on tu.user_id = ti.user_id
+ORDER BY tc.contract_number_norm;
+---БОЙ Марина ОПП, показать СЧА ДУ и ПИФ
+select (tu.last_name  || ' ' || tu.first_name) as IK, REPLACE(tu.parentuser_name, ',') AS "Директор департамента", 
+tc.contract_number_norm AS "Договор", tcm.name AS "Стратегия ДУ", SUM(tca.position_value) as "CЧА", SUM(va.MF_VALUE_RUB) as "СЧА ПИФ" from DWH.tab_contract tc 
+left join dwh.tab_investor ti ON ti.investor_id = tc.investor_id
+left join dwh.tab_contract_aum tca ON tc.contract_id = tca.contract_id
+left join DWH.tab_composite tcm ON tcm.composite_id = tc.composite_id
+left join MIS.vie_aum va  ON va.investor_id = ti.investor_id 
+left join DWH.TAB_USER tu on tu.user_id = ti.user_id
+where trunc(tca.aum_date) = to_date ( '28.08.2025' , 'dd.mm.yyyy' )
+and trunc(va.aum_date) = to_date ( '28.08.2025', 'DD.MM.YYYY' )
+and tc.contract_number_norm IN ( '' )
+GROUP BY tu.last_name, tu.first_name , tu.parentuser_name, tc.contract_number_norm, tcm.name
+order by 3;
+
+
+select  
+tc.contract_number_norm AS "Договор", ti.name AS "ФИО Клиента", (tu.last_name  || ' ' || tu.first_name) AS "ИК", tcm.name AS "Стратегия ДУ", SUM(tca.position_value) as "CЧА", tc.contract_date AS "Дата открытия" from DWH.tab_contract tc 
+left join dwh.tab_investor ti ON ti.investor_id = tc.investor_id
+left join dwh.tab_contract_aum tca ON tc.contract_id = tca.contract_id
+left join DWH.tab_composite tcm ON tcm.composite_id = tc.composite_id
+left join DWH.TAB_USER tu on tu.user_id = ti.user_id
+where trunc(tca.aum_date) = to_date ( '28.08.2025' , 'dd.mm.yyyy' )
+and tc.contract_number_norm IN ('' )
+GROUP BY tc.contract_number_norm, ti.name, tu.last_name, tu.first_name, tcm.name, tc.contract_date
+order by 2;
+
+select tc.contract_number_norm, tca.* from DWH.tab_contract tc 
+left join dwh.tab_contract_aum tca ON tca.contract_id = tc.contract_id
+where tca.aum_date = to_date ('30.05.2025', 'dd.mm.yyyy')
+and tc.contract_number_norm IN ( '' ) order by 3;
+
+---Маше, контракт, СЧА, Стратегия
+select tc.contract_number, ti.name, SUM(tca.balance_value) as "Баланс", nvl(cmp.name, 'не указан') as strategy_name, tc.stop_date
+from DWH.tab_contract tc
+left join DWH.tab_investor ti ON ti.investor_id = tc.investor_id
+left join DWH.TAB_USER tu ON tu.user_id = ti.user_id
+left join dwh.tab_contract_aum tca ON tca.contract_id = tc.contract_id
+left join DWH.tab_composite cmp ON cmp.composite_id = tc.composite_id
+where trunc(tca.aum_date) = to_date ('16.06.2025', 'dd.mm.yyyy')
+and tc.contract_number_norm IN ( '' )
+GROUP BY tc.contract_number, ti.name, cmp.name, tc.stop_date
+ORDER BY 1;
+
+--------------
+select * from dwh.tab_org;
+
+---ДЛЯ ЭДО Договор | Статус (Проверен/Введен в систему/Отклонен) | ИК 
+select (tc.client_lastname || ' ' || tc.client_firstname || ' ' || tc.client_middlename ) AS "ФИО Клиента", contract_number_prefix AS "Договор",  
+te.employee_name AS "ИК", ts.name AS "Статус договора в ЭДО"
+from DU.tab_contract tc 
+left join DU.tab_employee te ON te.employee_id = tc.employee_id
+join DU.tab_status ts ON ts.status_id = tc.status_id
+where contract_number_prefix  IN ( '') order by 2;
+
+
+
+
+
+---Выгружаем список ИК и директоров по Мой Капитал МК
+select tc.contract_number_norm, ti.name AS "ФИО клиента", (tu.last_name  || ' ' || tu.first_name ) as IK, REPLACE(tu.parentuser_name, ',') AS "Директор департамента"  from DWH.tab_contract tc
+left join DWH.tab_investor ti ON ti.investor_id = tc.investor_id
+left join DWH.TAB_USER tu ON tu.user_id = ti.user_id
+where tc.org_id = 2100
+and trunc(tc.stop_date) = to_date ('01.01.9999' , 'dd.mm.yyyy')
+and tc.investor_type_id = 1386
+order by 1;
+
+
+
+
+
