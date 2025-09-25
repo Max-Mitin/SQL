@@ -1,0 +1,160 @@
+select * FROM DWH.tab_contract t where contract_number like '%259796/ДУ-ФЛ-2020%';
+
+select * from DWH.tab_composite where du_id_strategy = 20897506;
+select * from DWH.tab_investor;
+
+select count(*) FROM DWH.tab_contract t where t.stop_date ='01.01.9999';
+alter session set nls_date_format = 'DD.MM.YYYY';
+-- подключиться к схеме ЭДО =>  select * from du.vw_dwh_contract@du
+
+select t.contract_number, i.name AS FIO, c.name AS STRATEGY, d.is_idu, d.is_du FROM DWH.tab_contract t 
+left join DWH.tab_composite c ON c.composite_id=t.composite_id
+left join DWH.tab_investor i ON i.investor_id=t.investor_id
+left join DU.tab_strategy@du d ON d.strategy_id=c.du_id_strategy
+left join 
+where t.stop_date ='01.01.9999';    
+
+
+
+status_id = 249
+
+select strategy_id, contract_id from DU.tab_contract@du where contract_number_prefix like '259796/ДУ-ФЛ-2020%';
+
+select is_idu, is_du from DU.tab_strategy@du where strategy_id = 20897506;  --
+
+
+
+with rest as (
+select c.contract_number_prefix
+, cus.lastname||' '||cus.firstname||' '||cus.middlename as name 
+, s.name as strategy
+, case when s.is_idu = 1 then 'Индивидуальный' else 'Присоединения' end as strategy_type
+, T.TARIFF 
+, tar.type 
+, tar.commission 
+, tar.description
+from DU.tab_contract@du c
+left join du.tab_customer@du cus on cus.customer_id = c.customer_id
+left join DU.tab_strategy@du s on s.strategy_id = c.strategy_id
+left join alf_sp_data.D_B_CONT_TAR@SPECTRE_PROD.CORP.ALFACAPITAL.RU T on T.DOC=c.spectre_portfolio_id and T.E_DATE >= '02.10.22'
+left join DU.tab_tariff@du tar on tar.spectr_tariff_id = T.TARIFF
+where c.status_id = 249 /*Введен в систему*/
+and c.contract_number_prefix in ('1000306/ДУ-ФЛ-2022')
+)
+, rest_dist as (
+select DISTINCT contract_number_prefix, name, strategy, strategy_type 
+from rest
+)
+select rest_dist.*
+from rest_dist
+
+Select T.*, c.contract_number_prefix, 
+cus.lastname||' '||cus.firstname||' '||cus.middlename as name, 
+ tar.type 
+from alf_sp_data.D_B_CONT_TAR@SPECTRE_PROD.CORP.ALFACAPITAL.RU T
+     join DU.tab_contract@du c on T.DOC=c.spectre_portfolio_id and  T.E_DATE >= sysdate
+left join DU.tab_tariff@du tar ON tar.spectr_tariff_id = T.TARIFF
+left join du.tab_customer@du cus on cus.customer_id = c.customer_id
+where c.status_id = 249 /*Введен в систему*/
+and c.contract_number_prefix in ('1000340/ДУ-ФЛ-2022');
+
+
+
+
+
+---ИТОГОВЫЙ вариант
+select T.* , c.contract_number_prefix
+, case when cus.legal = 1 then cus.legal_entity_shortname else cus.lastname||' '||cus.firstname||' '||cus.middlename end as name 
+, s.name as strategy_name
+, case when s.is_idu = 1 then 'Индивидуальный' else 'Присоединения' end as strategy_type
+, T.TARIFF
+, tar.type as TARIFF_type
+, tar.commission
+, tar.description
+from DU.tab_contract@du c
+left join du.tab_customer@du cus on cus.customer_id = c.customer_id
+left join DU.tab_strategy@du s on s.strategy_id = c.strategy_id
+left join alf_sp_data.D_B_CONT_TAR@SPECTRE_PROD.CORP.ALFACAPITAL.RU T on T.DOC=c.spectre_portfolio_id and T.E_DATE > sysdate
+left join DU.tab_tariff@du tar on tar.spectr_tariff_id = T.TARIFF
+where c.status_id = 249 /*Введен в систему*/
+and c.contract_number_prefix not in ('-1/ДУ-ФЛ-9999')
+and c.contract_number_prefix not like '%ЦК%'
+and c.contract_number_prefix not like '%НПФ%'
+and c.contract_number_prefix not like '%НПФ%'
+and c.contract_number_prefix in ('1000340/ДУ-ФЛ-2022')
+order by c.contract_number_prefix;
+
+---+++даты закрытия тарифов
+select c.contract_number_prefix
+, case when cus.legal = 1 then cus.legal_entity_shortname else cus.lastname||' '||cus.firstname||' '||cus.middlename end as name 
+, s.name as strategy_name
+, case when s.is_idu = 1 then 'Индивидуальный' else 'Присоединения' end as strategy_type
+, T.TARIFF
+, tar.type as TARIFF_type
+, tar.commission
+, tar.description
+, t.b_date as "Открытие тарифа"
+, T.E_DATE as "Закрытие тарифа"
+, case when T.E_DATE > sysdate then 'Открыт' else 'Закрыт' end as "Статус тарифа"
+from DU.tab_contract@du c
+left join du.tab_customer@du cus on cus.customer_id = c.customer_id
+left join DU.tab_strategy@du s on s.strategy_id = c.strategy_id
+left join alf_sp_data.D_B_CONT_TAR@SPECTRE_PROD.CORP.ALFACAPITAL.RU T on T.DOC=c.spectre_portfolio_id --and T.E_DATE > sysdate
+left join DU.tab_tariff@du tar on tar.spectr_tariff_id = T.TARIFF
+where c.status_id = 249 /*Введен в систему*/
+and c.contract_number_prefix not in ('-1/ДУ-ФЛ-9999')
+and c.contract_number_prefix not like '%ЦК%'
+and c.contract_number_prefix not like '%НПФ%'
+and c.contract_number_prefix not like '%НПФ%'
+order by c.contract_number_prefix;
+
+
+--- дата закрытия тарифа больше систем дня T.E_DATE > sysdate
+select c.contract_number_prefix
+, case when cus.legal = 1 then cus.legal_entity_shortname else cus.lastname||' '||cus.firstname||' '||cus.middlename end as name 
+, s.name as strategy_name
+, case when s.is_idu = 1 then 'Индивидуальный' else 'Присоединения' end as strategy_type
+, T.TARIFF
+, tar.type as TARIFF_type
+, tar.commission
+, tar.description
+from DU.tab_contract@du c
+left join du.tab_customer@du cus on cus.customer_id = c.customer_id
+left join DU.tab_strategy@du s on s.strategy_id = c.strategy_id
+left join alf_sp_data.D_B_CONT_TAR@SPECTRE_PROD.CORP.ALFACAPITAL.RU T on T.DOC=c.spectre_portfolio_id and T.E_DATE > sysdate
+left join DU.tab_tariff@du tar on tar.spectr_tariff_id = T.TARIFF
+where c.status_id = 249 /*Введен в систему*/
+--and tar.type IS NULL
+and c.contract_number_prefix not in ('-1/ДУ-ФЛ-9999')
+and c.contract_number_prefix not like '%ЦК%'
+and c.contract_number_prefix not like '%НПФ%'
+and c.contract_number_prefix not like '%НПФ%'
+order by 1,3;
+
+Select * from alf_sp_data.D_B_CONT_TAR@SPECTRE_PROD.CORP.ALFACAPITAL.RU where tariff = 57945724; --- T.TARIFF
+
+Select * from DU.tab_tariff@du where spectr_tariff_id = 57945724;x
+Select * from DU.tab_tariff@du where type is NULL;
+
+select * from DU.tab_tariff@du where spectr_tariff_id in ('57945724','57945918','57914682','57945716','57945722','57945731','57945729','57945719','57945732','57945736','57945728','57945720','57945747','57945718','57945748','57945727','57945730','57945749','57945725','57945735','57945742','57945743','57945750','57945751','57926698','57945738','57945744','57945733','57945745','57926644','57945740','57945717','198','1705','1704','76','57945721','1703','191','209','57945739','57945734','57945737','142','85','57945746','57945723','57945741');
+
+
+
+select DISTINCT  v.id, v.name, T.TARIFF, tar.spectr_tariff_id
+, tar.type as TARIFF_type
+, tar.commission
+, tar.description
+from DU.tab_contract@du c
+left join du.tab_customer@du cus on cus.customer_id = c.customer_id
+left join DU.tab_strategy@du s on s.strategy_id = c.strategy_id
+left join alf_sp_data.D_B_CONT_TAR@SPECTRE_PROD.CORP.ALFACAPITAL.RU T on T.DOC=c.spectre_portfolio_id and T.E_DATE > sysdate
+left JOIN alf_sp_data.OD_TARIFFS@SPECTRE_PROD.CORP.ALFACAPITAL.RU v ON v.id = t.tariff
+left join DU.tab_tariff@du tar on tar.spectr_tariff_id = T.TARIFF
+where c.status_id = 249 /*Введен в систему*/
+and tar.type IS NULL
+and c.contract_number_prefix not in ('-1/ДУ-ФЛ-9999')
+and c.contract_number_prefix not like '%ЦК%'
+and c.contract_number_prefix not like '%НПФ%'
+and c.contract_number_prefix not like '%НПФ%'
+and v.id IS NOT NULL
+order by 1,3;
