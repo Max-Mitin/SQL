@@ -1,0 +1,54 @@
+/*Добрый день!
+
+Сможете сделать выгрузку всех клиентов у которых есть ноты и если есть возможность то и тех у которых ноты погасились.
+
+По этим ППЗ
+
+До Новокузнецк- улица Тольятти
+
+До Новокузнецк-проспект Металлургов
+
+До Прокопьевск-улица Шишкина
+
+До кемерово-Кузбасс
+
+До кемерово- центральный
+
+До Томск-Магистрат
+
+До Томск- дом книги
+
+До Томск- красный экспресс.
+
+Спасибо! */
+
+
+select * FROM AGENT_ALFABANK_OUT.tab_ddu_asset_operation;
+select * FROM DWH.tab_asset;
+
+--*************************************
+select * FROM DWH.tab_asset_class;
+select * FROM DWH.tab_asset_class2;
+select * FROM DWH.tab_asset_class_ak;
+select * FROM DWH.tab_asset where asset_class2_id = 249069817;
+
+select DISTINCT ISIN from dwh.TAB_STRUCTURAL_NOTES_TICKERS;
+select * from dwh.TAB_STRUCTURAL_NOTES_TICKERS;
+
+and tc.point_of_sale_id IN (469322754, 2926018056, 3401384549, 469322703, 2855472923, 2889204303, 35148019353)
+
+select * from DWH.tab_contract;
+select * from DWH.tab_contract_aum tca;
+select * from DWH.tab_investor ti;
+
+select DISTINCT ti.name, tc.contract_number, ti.email, ti.cell_phone_ss from dwh.TAB_STRUCTURAL_NOTES_TICKERS snt
+inner join DWH.tab_asset tac ON snt.isin = tac.isin
+inner join DWH.tab_contract_aum tca ON tca.asset_id = tac.asset_id
+inner join DWH.tab_contract tc ON tc.contract_id = tca.contract_id
+inner join DWH.tab_investor ti ON ti.investor_id = tc.investor_id
+where 
+tac.asset_class2_id = 249069817
+and trunc(tca.aum_date) = to_date ('17.05.2020', 'dd.mm.yyyy')
+and tc.point_of_sale_id IN (469322754, 2926018056, 3401384549, 469322703, 2855472923, 2889204303, 35148019353)
+and tc.org_id = 1697
+--and trunc(tc.stop_date) > to_date ('17.05.2023', 'dd.mm.yyyy');
