@@ -1,0 +1,256 @@
+
+select * FROM DU.tab_contract@du;
+select * FROM du.tab_customer@du; --spectre_face_id
+----неверно из СПЕКТРа 
+select  
+  d.num, 
+  f.name, 
+  d.d_date, 
+  c.i_date, 
+  c.e_date, 
+  d.r_date, 
+  --count(d.id) as cnt
+  s.name as strategy_name, 
+  case when s.is_idu = 1 then 'Индивидуальный' else 'Присоединения' end as strategy_type 
+from 
+  alf_sp_data.od_docs@SPECTRE_PROD.CORP.ALFACAPITAL.RU d 
+  join alf_sp_data.d_b_contracts@SPECTRE_PROD.CORP.ALFACAPITAL.RU c on c.doc = d.id 
+  join alf_sp_data.od_faces@SPECTRE_PROD.CORP.ALFACAPITAL.RU f on f.id = c.investor 
+  join du.tab_customer@du cus on cus.spectre_face_id = f.id 
+  join DU.tab_contract@du cn on cn.customer_id = cus.customer_id 
+  join DU.tab_strategy@du s on s.strategy_id = cn.strategy_id 
+where 
+  d.d_cat = 195 --and c.i_date is null
+  and c.e_date > '09.01.2023' --дата закрытия
+  and c.i_date <= '09.01.2023' --дата начала инвестирования 
+  and d.num not in ('-1/ДУ-ФЛ-9999 (Пул ошибок П. П.)')
+ORDER BY 1,2;
+
+--SOF-75466
+---косячная версия от меня с отсечкой строк по балансу >0 т.е. ВУК многие могут не платить и быть должны и баланс может быть в минусе
+--- и не учет получается что в dwh.tab_contract_aum c
+---СЧА это c.position_value в рублях
+--- c.balance_value НЕ ИСПОЛЬЗОВАТЬ ЭТО НЕ ВАЛЮТА это стоимость покупки
+---position_size это Количество
+---не проверен СЧА, надо сверить с ЛК и СПЕКТР
+select v.contract_number,  z.name, SUM(c.balance_value) as "Баланс", nvl(cmp.name, 'не указан') as strategy_name, 
+nvl(case when cmp.sdu = 'ИДУ' then 'Индивидуальный' else 'Присоединения' end, 'не указан') as strategy_type
+from DWH.tab_contract v
+left join DWH.tab_investor z ON z.investor_id = v.investor_id
+left join DWH.TAB_USER t ON t.user_id = z.user_id
+left join dwh.tab_contract_aum c ON c.contract_id = v.contract_id
+left join DWH.tab_composite cmp ON cmp.composite_id = v.composite_id
+where 
+ c.aum_date = '09.01.2023'
+AND balance_value >0
+and contract_number_norm = '259796/ДУ-ФЛ-2020'
+GROUP BY v.contract_number, z.name, cmp.name, cmp.sdu, case when cmp.sdu = 'ИДУ' then 'Индивидуальный' else 'Присоединения' end
+ORDER BY 1;
+     
+select * from     DWH.tab_contract;
+select * from  DWH.tab_investor;
+select count(*) from  dwh.tab_contract_aum;
+select * from  dwh.tab_contract_aum;
+select name, sdu from DWH.tab_composite where lower(name) like lower('%казначей%') ORDER BY 2;
+select * from DWH.tab_composite;
+----Замечания от Саши исправления
+with rest as (
+select c.aum_date,
+  v.contract_number, 
+  z.name, 
+  SUM(c.position_value) as balance, 
+  nvl(cmp.name, 'не указан') as strategy_name, 
+    case 
+    when cmp.sdu = 'ИДУ' then 'Индивидуальный' 
+    when cmp.sdu = 'CC' then 'Присоединения'  
+    else 'не указан' end    as strategy_type 
+from 
+  DWH.tab_contract v 
+  left join DWH.tab_investor z ON z.investor_id = v.investor_id 
+  left join DWH.TAB_USER t ON t.user_id = z.user_id 
+  left join dwh.tab_contract_aum c ON c.contract_id = v.contract_id 
+  left join DWH.tab_composite cmp ON cmp.composite_id = v.composite_id 
+where 
+  c.aum_date = '19.01.2023' 
+  and v.stop_date > sysdate
+GROUP BY c.aum_date,
+  v.contract_number, 
+  z.name, 
+  cmp.name,
+  cmp.sdu
+  )
+  select * 
+  from rest
+  where balance > 0
+  order by 2;
+  
+  
+----07022023
+select * from     DWH.tab_contract where contract_number like '409611/%';  --74837/% stop_date is null;---
+select * from  DWH.tab_investor where investor_id = 24416946087;
+select count(*) from  dwh.tab_contract_aum;
+select * from  dwh.tab_contract_aum;
+select name, sdu from DWH.tab_composite where lower(name) like lower('%казначей%') ORDER BY 2;
+select * from DWH.tab_composite;
+
+select * from     DWH.tab_contract where contract_number like '858446/%'; ---28689291052 
+select * from  dwh.tab_contract_aum where contract_id = 26804723214 and aum_date = '01.04.2022';
+select * from  dwh.tab_contract_aum where   asset_id in (6840);
+select * from  dwh.tab_asset where asset_id = 5873813054;
+select * from  dwh.tab_asset where lower(name) like lower('%пиф%');
+select * from DWH.tab_asset where lower(name) like lower('%ОПИФ%мой%');
+select * from DWH.tab_asset where ISIN IN ('RU000A0JRXH6', 'RU000A103NR5');
+
+
+('RU000A0ERNJ4',
+'RU000A0ERNN6',
+'RU000A0HNSU2',
+'RU000A0HNST4',
+'RU000A0JRXP9',
+'RU000A0JRXH6',
+'RU000A0JRXG8',
+'RU000A0JRXK0',
+'RU000A0JRYH4',
+'RU000A0JWSA1',
+'RU000A0ZZLR9',
+'RU000A0ZZLP3',
+'RU000A0ZZLL2',
+'RU000A1007N8',
+'RU000A103Q32',
+'RU000A0ZZTQ4',
+'RU000A1006V3',
+'RU000A100Q43',
+'RU000A101HY7',
+'RU000A101PN3',
+'RU000A101YY2',
+'RU000A1023A2',
+'RU000A1023B0',
+'RU000A102E78',
+'RU000A102FK8',
+'RU000A102PN1',
+'RU000A1030H2',
+'RU000A1036A4',
+'RU000A103L86',
+'RU000A103NR5',
+'RU000A103ZC1',
+'RU000A103ZD9',
+'RU000A1045N8',
+'RU000A104CU0',
+'RU000A104X08',
+'RU000A1051D7',
+'RU000A1054J8');
+---z.legal_entity признак юр лица
+---БОЙ--
+with rest as (select z.legal_entity, v.contract_number,  v.contract_date,
+    nvl(cmp.name, 'не указан') AS "Стратегия договора ДУ", 
+    case 
+    when cmp.sdu = 'ИДУ' then 'Индивидуальный' 
+    when cmp.sdu = 'CC' then 'Присоединения'  
+    else 'не указан' end  as  strategy_type,
+    nvl(z.document_number, 'не указан') AS docnum,
+    z.name,  c.aum_date,
+    c.position_value as balance,
+    c.position_size AS "Количество",
+    ast.name  AS "Эмитент",
+    ast.isin 
+from 
+  DWH.tab_contract v 
+  left join DWH.tab_investor z ON z.investor_id = v.investor_id 
+  left join DWH.TAB_USER t ON t.user_id = z.user_id 
+  left join dwh.tab_contract_aum c ON c.contract_id = v.contract_id 
+  left join DWH.tab_composite cmp ON cmp.composite_id = v.composite_id 
+  left join dwh.tab_asset ast ON ast.asset_id = c.asset_id
+where 
+   v.stop_date > to_date ('29.12.2022', 'dd.mm.yyyy') and 
+   c.position_value > 0 and
+   c.aum_date = to_date ('29.12.2022', 'dd.mm.yyyy') and
+   ast.ISIN IN ('RU000A0ERNJ4',
+'RU000A0ERNN6',
+'RU000A0HNSU2',
+'RU000A0HNST4',
+'RU000A0JRXP9',
+'RU000A0JRXH6',
+'RU000A0JRXG8',
+'RU000A0JRXK0',
+'RU000A0JRYH4',
+'RU000A0JWSA1',
+'RU000A0ZZLR9',
+'RU000A0ZZLP3',
+'RU000A0ZZLL2',
+'RU000A1007N8',
+'RU000A103Q32',
+'RU000A0ZZTQ4',
+'RU000A1006V3',
+'RU000A100Q43',
+'RU000A101HY7',
+'RU000A101PN3',
+'RU000A101YY2',
+'RU000A1023A2',
+'RU000A1023B0',
+'RU000A102E78',
+'RU000A102FK8',
+'RU000A102PN1',
+'RU000A1030H2',
+'RU000A1036A4',
+'RU000A103L86',
+'RU000A103NR5',
+'RU000A103ZC1',
+'RU000A103ZD9',
+'RU000A1045N8',
+'RU000A104CU0',
+'RU000A104X08',
+'RU000A1051D7',
+'RU000A1054J8') )
+   
+   
+  Select contract_number, contract_date, "Стратегия договора ДУ", strategy_type,
+  CASE 
+  when legal_entity = 1 then docnum
+  else 'физ.лицо' end AS "ОГРН", 
+  name,  aum_date, balance, "Количество", "Эмитент", isin
+  From rest
+  Order by 1;
+  
+
+---******посчитать кол-вл*******
+select count(v.contract_id), v.asset_id, t.isin from dwh.tab_contract_aum v
+inner join DWH.tab_asset t ON t.asset_id = v.asset_id
+where t.ISIN IN ('RU000A0ERNJ4',
+'RU000A0ERNN6',
+'RU000A0HNSU2',
+'RU000A0HNST4',
+'RU000A0JRXP9',
+'RU000A0JRXH6',
+'RU000A0JRXG8',
+'RU000A0JRXK0',
+'RU000A0JRYH4',
+'RU000A0JWSA1',
+'RU000A0ZZLR9',
+'RU000A0ZZLP3',
+'RU000A0ZZLL2',
+'RU000A1007N8',
+'RU000A103Q32',
+'RU000A0ZZTQ4',
+'RU000A1006V3',
+'RU000A100Q43',
+'RU000A101HY7',
+'RU000A101PN3',
+'RU000A101YY2',
+'RU000A1023A2',
+'RU000A1023B0',
+'RU000A102E78',
+'RU000A102FK8',
+'RU000A102PN1',
+'RU000A1030H2',
+'RU000A1036A4',
+'RU000A103L86',
+'RU000A103NR5',
+'RU000A103ZC1',
+'RU000A103ZD9',
+'RU000A1045N8',
+'RU000A104CU0',
+'RU000A104X08',
+'RU000A1051D7',
+'RU000A1054J8')
+and aum_date = to_date ('01.04.2022', 'dd.mm.yyyy')
+GROUP BY v.asset_id, t.isin;
