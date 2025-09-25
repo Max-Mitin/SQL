@@ -1,0 +1,449 @@
+/*  SOF-116287  */
+alter session set nls_date_format = 'DD.MM.YYYY HH24:MI:SS';
+---таблица из GUI с расчетами НДФЛ
+select * from alf_sp_data.od_operators where id in (564 , 555)  ;
+
+select * from ALF_SP_DATA.od_docs where id = 105770502
+select * from ALF_SP_DATA.od_docs where d_cat = 815 and num = 'BELV_99825918LK_IIS'; -- id = 104075365
+select * from  ALF_SP_DATA.FS_OD_STEPS where DOC = 108495591;
+select * from  ALF_SP_DATA.FS_OD_DOC_STATES where ID IN(2,6, 9,7);
+---Cсверка прошла
+select * from ALF_SP_DATA.od_docs where d_cat = 815 and num ='QXPI_50615036LK'
+select * from  ALF_SP_DATA.FS_OD_STEPS fos
+join ALF_SP_DATA.FS_OD_DOC_STATES fods ON fods.id = fos.out_state
+where fos.DOC = 105808247;
+--*****
+
+select fos.*, fods.name from  ALF_SP_DATA.FS_OD_STEPS fos 
+join ALF_SP_DATA.FS_OD_DOC_STATES fods ON fods.id = fos.out_state
+where DOC = 105770502;
+
+select D__.num, S__.s_date, ST__.name from ALF_SP_DATA.od_docs D__
+join ALF_SP_DATA.FS_OD_STEPS S__ on S__.DOC=D__.ID
+join ALF_SP_DATA.FS_OD_DOC_STATES ST__ on ST__.ID=D__.STATE
+where D__.d_cat = 815 
+and D__.oper in ( 555, 564 )
+and D__.num = 'NFN4_09130826LKD2';
+
+select  D__.num, S__.s_date, ST__.name from ALF_SP_DATA.od_docs D__
+join ALF_SP_DATA.FS_OD_STEPS S__ on S__.DOC=D__.ID
+join ALF_SP_DATA.FS_OD_DOC_STATES ST__ on ST__.ID=D__.STATE
+where D__.d_cat = 815
+and ST__.name = 'Блокировка'
+order by D__.ID desc
+FETCH FIRST 1000 ROWS ONLY ;
+
+---вывести мин дату(начало) для расчета  S__.oper надо D_.creator
+select D__.num as num1, R_DATE as min_date, ST__.name from ALF_SP_DATA.od_docs D__
+join ALF_SP_DATA.FS_OD_STEPS S__ on S__.DOC=D__.ID
+join ALF_SP_DATA.FS_OD_DOC_STATES ST__ on ST__.ID=D__.STATE
+where D__.d_cat = 815 
+and ST__.name = 'Блокировка'
+and S__.s_date > '20.09.2024'
+and S__.oper in ( 555, 564 )
+and S__.err_code = 0
+and D__.num = 'V9BU_29526327LK' /* пример по одному расчету */
+GROUP BY D__.R_DATE, D__.num, ST__.name
+
+SELECT D__.num AS num1, MAX(S__.s_date) AS max_date, ST__.name
+    FROM ALF_SP_DATA.od_docs D__
+    JOIN ALF_SP_DATA.FS_OD_STEPS S__ ON S__.DOC = D__.ID
+    JOIN ALF_SP_DATA.FS_OD_DOC_STATES ST__ ON ST__.ID = D__.STATE
+    WHERE D__.d_cat = 815 
+      AND ST__.name = 'Блокировка'
+      AND S__.s_date > TO_DATE('20.09.2024', 'DD.MM.YYYY')
+      AND S__.oper in ( 555, 564 )
+      and S__.err_code = 0
+      and D__.num = 'V9BU_29526327LK' 
+    GROUP BY D__.num, ST__.name
+
+---для всех расчетов СТАТИСТИКА расчетов с 20.09.2024
+WITH rest_max AS (
+    SELECT D__.num AS num1, MAX(S__.s_date) AS max_date, ST__.name
+    FROM ALF_SP_DATA.od_docs D__
+    JOIN ALF_SP_DATA.FS_OD_STEPS S__ ON S__.DOC = D__.ID
+    JOIN ALF_SP_DATA.FS_OD_DOC_STATES ST__ ON ST__.ID = D__.STATE
+    WHERE D__.d_cat = 815 
+      AND ST__.name = 'Сверка прошла'
+      AND trunc(S__.s_date) > TO_DATE('27.12.2024', 'DD.MM.YYYY')
+      AND D__.CREATOR in ( 564 )
+      AND S__.err_code = 0
+      --and D__.num = '3726_58310044LKTRUDR'
+    GROUP BY D__.num, ST__.name
+),  /* максимальное время */
+
+rest_min AS (
+    SELECT D__.num AS num2, R_DATE AS min_date, ST__.name
+    FROM ALF_SP_DATA.od_docs D__
+    JOIN ALF_SP_DATA.FS_OD_STEPS S__ ON S__.DOC = D__.ID
+    JOIN ALF_SP_DATA.FS_OD_DOC_STATES ST__ ON ST__.ID = D__.STATE
+    WHERE D__.d_cat = 815 
+      AND ST__.name = 'Сверка прошла'
+      AND trunc(S__.s_date) > TO_DATE('27.12.2024', 'DD.MM.YYYY')
+      AND D__.CREATOR in ( 564 )
+      AND S__.err_code = 0
+      --and D__.num = '3726_58310044LKTRUDR'
+    GROUP BY D__.R_DATE, D__.num, ST__.name
+)  /* минимальное время */
+
+SELECT rx.max_date, rn.min_date,
+       rx.num1, 
+       rx.max_date - rn.min_date AS days_difference,
+       FLOOR((rx.max_date - rn.min_date) * 24) AS hours,
+       FLOOR(MOD((rx.max_date - rn.min_date) * 24 * 60, 60)) AS minutes,
+       FLOOR(MOD((rx.max_date - rn.min_date) * 24 * 60 * 60, 60)) AS seconds
+FROM rest_max rx
+JOIN rest_min rn ON rx.num1 = rn.num2
+ORDER BY MIN_DATE DESC ; 
+
+/* метрика, когда автомат работал долго (более 10 мин) */
+
+/*SELECT rx.num1, rx.max_date - rn.min_date AS time
+FROM rest_max rx
+JOIN rest_min rn ON rx.num1 = rn.num2;*/
+----Мой вариант смотрит на отрезок от -20 до -10 мин
+WITH rest_max AS (
+    SELECT D__.num AS num1, MAX(S__.s_date) AS max_date, ST__.name
+    FROM ALF_SP_DATA.od_docs D__
+    JOIN ALF_SP_DATA.FS_OD_STEPS S__ ON S__.DOC = D__.ID
+    JOIN ALF_SP_DATA.FS_OD_DOC_STATES ST__ ON ST__.ID = D__.STATE
+    WHERE D__.d_cat = 815 
+      --AND ST__.name = 'Сверка прошла'
+      --AND S__.s_date >= trunc(sysdate) ---TO_DATE('20.09.2024', 'DD.MM.YYYY')
+      --AND D__.CREATOR in ( 564 )
+      AND S__.err_code = 0
+    GROUP BY D__.num, ST__.name
+),  /* максимальное время */
+
+rest_min AS (
+    SELECT D__.num AS num2, R_DATE AS min_date, ST__.name
+    FROM ALF_SP_DATA.od_docs D__
+    JOIN ALF_SP_DATA.FS_OD_STEPS S__ ON S__.DOC = D__.ID
+    JOIN ALF_SP_DATA.FS_OD_DOC_STATES ST__ ON ST__.ID = D__.STATE
+    WHERE D__.d_cat = 815 
+      --AND ST__.name = 'Сверка прошла'
+      --AND S__.s_date >= trunc(sysdate) ---TO_DATE('20.09.2024', 'DD.MM.YYYY')
+      --AND D__.CREATOR in ( 564 )
+      AND S__.err_code = 0
+    GROUP BY D__.R_DATE, D__.num, ST__.name
+)  /* минимальное время */
+
+SELECT rx.max_date, rn.min_date,
+       rx.num1, 
+       rx.max_date - rn.min_date AS days_difference,
+       FLOOR((rx.max_date - rn.min_date) * 24) AS hours,
+       FLOOR(MOD((rx.max_date - rn.min_date) * 24 * 60, 60)) AS minutes,
+       FLOOR(MOD((rx.max_date - rn.min_date) * 24 * 60 * 60, 60)) AS seconds
+FROM rest_max rx
+JOIN rest_min rn ON rx.num1 = rn.num2
+WHERE rn.min_date >= (SYSDATE - 3)                    ---------------(SYSDATE - 660/1440)
+  AND rn.min_date <= (SYSDATE - 1)                               ----------------(SYSDATE - 1/1440)
+ORDER BY rn.min_date DESC;
+---Дима версия на ПРОД!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+WITH rest_max AS (
+    SELECT D__.num AS num1, MAX(S__.s_date) AS max_date, ST__.name
+    FROM ALF_SP_DATA.od_docs D__
+             JOIN ALF_SP_DATA.FS_OD_STEPS S__ ON S__.DOC = D__.ID
+             JOIN ALF_SP_DATA.FS_OD_DOC_STATES ST__ ON ST__.ID = D__.STATE
+    WHERE D__.d_cat = 815
+      --AND ST__.name = 'Сверка прошла'
+      AND S__.s_date > SYSDATE-1
+      AND D__.CREATOR in ( 564 )
+      AND S__.err_code = 0
+    GROUP BY D__.num, ST__.name
+), /* максимальное время */
+
+     rest_min AS (
+         SELECT D__.num AS num2, R_DATE AS min_date, ST__.name
+         FROM ALF_SP_DATA.od_docs D__
+                  JOIN ALF_SP_DATA.FS_OD_STEPS S__ ON S__.DOC = D__.ID
+                  JOIN ALF_SP_DATA.FS_OD_DOC_STATES ST__ ON ST__.ID = D__.STATE
+         WHERE D__.d_cat = 815
+           --AND ST__.name = 'Сверка прошла'
+           AND S__.s_date > SYSDATE-1
+           AND D__.CREATOR in ( 564 )
+           AND S__.err_code = 0
+         GROUP BY D__.R_DATE, D__.num, ST__.name
+     ) /* минимальное время */
+
+SELECT rx.max_date,
+       rn.min_date, --- дата создания документа
+       rx.num1 as num,
+       ROUND((max_date - min_date) * 86400) AS seconds_diff
+FROM rest_max rx
+         JOIN rest_min rn ON rx.num1 = rn.num2
+WHERE min_date BETWEEN (SYSDATE - 125/1440) AND (SYSDATE - 5/1440)  /* 1000:60 = 16.6 часа */
+  AND ROUND((max_date - min_date) * 86400) > 600 -- Фильтрация по времени обработки, 600с или 10 мин
+ORDER BY MIN_DATE DESC
+FETCH FIRST 100 ROWS ONLY;
+
+--метрика, когда автомат вообще не работает
+
+select * from ALF_SP_DATA.od_docs od 
+LEFT JOIN ALF_SP_DATA.FS_OD_STEPS fos ON fos.doc = od.id
+JOIN ALF_SP_DATA.FS_OD_DOC_STATES ST__ ON ST__.ID = od.STATE
+where 
+--fos.err_code <> 0 OR  
+od.a_flag <> 0  /* a_flag = 1 значит автомат сломал документ  */
+and od.d_cat = 815 
+--AND ST__.name = 'Сверка прошла'  /* название директивы, для 564 конечная - СВЕРКА ПРОШЛА */
+and trunc(od.r_date) >= TO_DATE('31.03.2025', 'DD.MM.YYYY') 
+--and od.creator IN ( 564 , 556 , 555 )  /* если ВСЕХ операторов, то закоментируй строку */
+--and fos.s_date BETWEEN (SYSDATE - 30/1440) AND (SYSDATE - 20/1440)
+--and od.a_flag = 0  /*если был rollback то <>0 */
+order by 4 desc;
+
+--
+--ЗАВИСШИЕ расчеты больше 30-ти мин назад и не больше 20 мин назад и статус нулл (не выведено на прод)
+    SELECT D__.num AS num, D__.R_DATE AS min_date, S__.s_date, ST__.name
+    FROM ALF_SP_DATA.od_docs D__
+    LEFT JOIN ALF_SP_DATA.FS_OD_STEPS S__ ON S__.DOC = D__.ID
+    JOIN ALF_SP_DATA.FS_OD_DOC_STATES ST__ ON ST__.ID = D__.STATE
+    WHERE D__.d_cat = 815 
+      AND ST__.name <> 'Сверка прошла'
+      AND S__.s_date BETWEEN (SYSDATE - 30/1440) AND (SYSDATE - 20/1440)
+      AND D__.CREATOR in ( 564 )
+      --AND D__.num = 'R03Y_78283906LK_URGENT'
+    ORDER BY 2 DESC;
+    
+--Проверяем наличие ошибок по НДФЛ для оператора 564 (SYSDBA_NDFL	Автомат НДФЛ)
+    SELECT  *                        --- D__.num AS num, MAX(S__.s_date), S__.s_date, ST__.name
+    FROM ALF_SP_DATA.od_docs D__
+    LEFT JOIN ALF_SP_DATA.FS_OD_STEPS S__ ON S__.DOC = D__.ID
+    JOIN ALF_SP_DATA.FS_OD_DOC_STATES ST__ ON ST__.ID = D__.STATE
+    WHERE D__.d_cat = 815 
+      AND D__.a_flag <> 0  /*ROLLBACK*/
+      AND D__.CREATOR in ( 564 )
+    ---GROUP BY D__.num, S__.s_date, ST__.name
+    ORDER BY D__.R_DATE DESC;
+-- Для прода ИТОГОВОЕ на прод!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    SELECT D__.num AS num, MAX(S__.s_date), ST__.name
+    FROM ALF_SP_DATA.od_docs D__
+    LEFT JOIN ALF_SP_DATA.FS_OD_STEPS S__ ON S__.DOC = D__.ID
+    JOIN ALF_SP_DATA.FS_OD_DOC_STATES ST__ ON ST__.ID = D__.STATE
+    WHERE D__.d_cat = 815 
+      AND S__.s_date > GETDATE()-2 /* глубина Т-2*/
+      AND D__.a_flag <> 0  /*ROLLBACK*/
+      AND D__.CREATOR in ( 564 )  /*только SYSDBA_NDFL*/
+    GROUP BY D__.num, ST__.name
+    ORDER BY 2 DESC;
+    
+    
+ delete from ALF_SP_DATA.od_docs D__ where D__.NUM in( select COLUMN1 from alf_sp_data.TMP0_STO_ACC ); 
+
+ 
+update ALF_SP_DATA.od_docs D__ set D__.A_FLAG = 0 where D__.NUM = '1805_88437756LK';
+update ALF_SP_DATA.od_docs D__ set D__.A_FLAG = 0, d__.err_code=0 where D__.NUM in( select COLUMN1 from alf_sp_data.TMP0_STO_ACC );
+
+update ALF_SP_DATA.FS_OD_STEPS S__ set s__.err_code = 0 where S__.DOC IN( select alf_sp_data.tmp0_sto_acc.acc from alf_sp_data.TMP0_STO_ACC );
+
+select DISTINCT(D__.ID), tmpc.COLUMN1 from ALF_SP_DATA.od_docs D__ 
+join alf_sp_data.TMP0_STO_ACC tmpc ON tmpc.COLUMN1 = D__.NUM
+where D__.R_DATE >='01.04.2025'
+
+    SELECT   D__.*  
+    FROM ALF_SP_DATA.od_docs D__
+    LEFT JOIN ALF_SP_DATA.FS_OD_STEPS S__ ON S__.DOC = D__.ID
+    JOIN ALF_SP_DATA.FS_OD_DOC_STATES ST__ ON ST__.ID = D__.STATE
+    WHERE D__.d_cat = 815 
+      AND D__.a_flag <> 0  /*ROLLBACK*/
+      AND D__.CREATOR in ( 564 )
+--GROUP BY D__.num, S__.s_date, ST__.name
+    ORDER BY D__.R_DATE DESC;
+ 
+    
+--ST__.name = 'Сверка прошла'
+select * from  ALF_SP_DATA.FS_OD_STEPS fos  
+join ALF_SP_DATA.od_docs od ON od.id = fos.doc
+where 
+fos.err_code <> 0 and 
+od.r_date > TO_DATE('10.04.2025', 'DD.MM.YYYY') and od.d_cat = 815
+and od.creator = 564
+order by 5 desc;
+
+
+select * from ALF_SP_DATA.od_docs where id = 104346958;
+
+---кто проводит расчеты НДФЛ
+select od.oper, oo.user_id, oo.name, count(*) from ALF_SP_DATA.od_docs od
+join alf_sp_data.od_operators oo ON oo.id = od.oper
+where d_cat = 815 
+AND r_date > TO_DATE('01.10.2024', 'DD.MM.YYYY')
+group by oper , oo.user_id, oo.name
+order by 1;
+---кто созздает 
+select od.creator, oo.user_id, oo.name, count(*) from ALF_SP_DATA.od_docs od
+join alf_sp_data.od_operators oo ON oo.id = od.oper
+where d_cat = 815 
+AND r_date > TO_DATE('01.10.2024', 'DD.MM.YYYY')
+group by od.creator , oo.user_id, oo.name
+order by 1;
+
+---для одного расчета
+WITH rest_max AS (select D__.num as num1, MAX(S__.s_date) as mint, ST__.name from ALF_SP_DATA.od_docs D__
+join ALF_SP_DATA.FS_OD_STEPS S__ on S__.DOC=D__.ID
+join ALF_SP_DATA.FS_OD_DOC_STATES ST__ on ST__.ID=D__.STATE
+where D__.d_cat = 815 and D__.num = 'TC2X_31328087LK_HIGH'
+GROUP BY D__.num, ST__.name),  /* максимальное время */
+
+rest_min AS (select D__.num as num2, MIN(S__.s_date) as maxt, ST__.name from ALF_SP_DATA.od_docs D__
+join ALF_SP_DATA.FS_OD_STEPS S__ on S__.DOC=D__.ID
+join ALF_SP_DATA.FS_OD_DOC_STATES ST__ on ST__.ID=D__.STATE
+where D__.d_cat = 815 and D__.num = 'TC2X_31328087LK_HIGH'
+GROUP BY D__.num, ST__.name)  /* минимальное время */
+
+--select * from rest_max, rest_min
+
+select num1, maxt - mint as time from rest_max rx
+join rest_min rn ON rx.num1 = rn.num2;
+
+
+select * from alf_sp_data.OD_WORK_RIGHTS where profile = 262976;
+
+--Настройка прав для автомата для от ПЕТРА
+delete from alf_sp_data.OD_WORK_RIGHTS w where w.D_CAT=815 and w.WORK_=0;
+insert into OD_WORK_RIGHTS /*+ APPEND */ (RIGHT_, OBJECT, D_CAT, WORK_, PROFILE) values (3,1314, 815, 0, 786500);
+insert into OD_WORK_RIGHTS /*+ APPEND */ (RIGHT_, OBJECT, D_CAT, WORK_, PROFILE) values (3,1955, 815, 0, 786500) ;
+
+---Попов
+WITH rest_max AS (
+    SELECT D__.num AS num1, MAX(S__.s_date) AS max_date, ST__.name
+    FROM ALF_SP_DATA.od_docs D__
+    JOIN ALF_SP_DATA.FS_OD_STEPS S__ ON S__.DOC = D__.ID
+    JOIN ALF_SP_DATA.FS_OD_DOC_STATES ST__ ON ST__.ID = D__.STATE
+    WHERE D__.d_cat = 815 
+      AND ST__.name = 'Сверка прошла'
+      AND S__.s_date BETWEEN TO_DATE('01.08.2025', 'DD.MM.YYYY') AND TO_DATE('04.09.2025', 'DD.MM.YYYY') + 0.99999
+      AND D__.CREATOR in (564)
+      AND S__.err_code = 0
+    GROUP BY D__.num, ST__.name
+),  /* максимальное время */
+
+rest_min AS (
+    SELECT D__.num AS num2, R_DATE AS min_date, ST__.name
+    FROM ALF_SP_DATA.od_docs D__
+    JOIN ALF_SP_DATA.FS_OD_STEPS S__ ON S__.DOC = D__.ID
+    JOIN ALF_SP_DATA.FS_OD_DOC_STATES ST__ ON ST__.ID = D__.STATE
+    WHERE D__.d_cat = 815 
+      AND ST__.name = 'Сверка прошла'
+      AND S__.s_date BETWEEN TO_DATE('01.08.2025', 'DD.MM.YYYY') AND TO_DATE('04.09.2025', 'DD.MM.YYYY') + 0.99999
+      AND D__.CREATOR in (564)
+      AND S__.err_code = 0
+    GROUP BY D__.R_DATE, D__.num, ST__.name
+)  /* минимальное время */
+
+SELECT rx.max_date, rn.min_date,
+       rx.num1, 
+       rx.max_date - rn.min_date AS days_difference,
+       FLOOR((rx.max_date - rn.min_date) * 24) AS hours,
+       FLOOR(MOD((rx.max_date - rn.min_date) * 24 * 60, 60)) AS minutes,
+       FLOOR(MOD((rx.max_date - rn.min_date) * 24 * 60 * 60, 60)) AS seconds
+FROM rest_max rx
+JOIN rest_min rn ON rx.num1 = rn.num2
+WHERE (rx.max_date - rn.min_date) * 24 * 60 > 20  -- более 20 минут
+  AND rn.min_date BETWEEN TO_DATE('01.08.2025', 'DD.MM.YYYY') AND TO_DATE('04.09.2025', 'DD.MM.YYYY') + 0.99999
+ORDER BY rn.min_date DESC;
+---Попов + договора
+WITH rest_max AS (
+    SELECT 
+        D__.num AS num1, 
+        MAX(S__.s_date) AS max_date, 
+        ST__.name,
+        D__.ID AS doc_id  -- Добавляем ID документа для соединения
+    FROM ALF_SP_DATA.od_docs D__
+    JOIN ALF_SP_DATA.FS_OD_STEPS S__ ON S__.DOC = D__.ID
+    JOIN ALF_SP_DATA.FS_OD_DOC_STATES ST__ ON ST__.ID = D__.STATE
+    WHERE D__.d_cat = 815 
+      AND ST__.name = 'Сверка прошла'
+      AND S__.s_date BETWEEN TO_DATE('01.08.2025', 'DD.MM.YYYY') AND TO_DATE('04.09.2025', 'DD.MM.YYYY') + 0.99999
+      AND D__.CREATOR in (564)
+      AND S__.err_code = 0
+    GROUP BY D__.num, ST__.name, D__.ID
+),  /* максимальное время */
+
+rest_min AS (
+    SELECT 
+        D__.num AS num2, 
+        R_DATE AS min_date, 
+        ST__.name,
+        D__.ID AS doc_id  -- Добавляем ID документа для соединения
+    FROM ALF_SP_DATA.od_docs D__
+    JOIN ALF_SP_DATA.FS_OD_STEPS S__ ON S__.DOC = D__.ID
+    JOIN ALF_SP_DATA.FS_OD_DOC_STATES ST__ ON ST__.ID = D__.STATE
+    WHERE D__.d_cat = 815 
+      AND ST__.name = 'Сверка прошла'
+      AND S__.s_date BETWEEN TO_DATE('01.08.2025', 'DD.MM.YYYY') AND TO_DATE('04.09.2025', 'DD.MM.YYYY') + 0.99999
+      AND D__.CREATOR in (564)
+      AND S__.err_code = 0
+    GROUP BY D__.R_DATE, D__.num, ST__.name, D__.ID
+),  /* минимальное время */
+
+portfolio_data AS (
+    -- Получаем данные о портфелях
+    SELECT 
+        H__.DOC,
+        CDP.NUM AS portfolio_num
+    FROM ALF_SP_DATA.U_OP_P_NDFL H__
+    LEFT JOIN ALF_SP_DATA.FS_D_B_CONTRACTS CP ON CP.DOC = H__.D_PORT
+    LEFT JOIN ALF_SP_DATA.OD_DOCS CDP ON CDP.ID = CP.DOC
+)
+
+SELECT 
+    rx.max_date, 
+    rn.min_date,
+    rx.num1, 
+    pd.portfolio_num AS CDP_NUM,  -- Добавляем номер портфеля
+    rx.max_date - rn.min_date AS days_difference,
+    FLOOR((rx.max_date - rn.min_date) * 24) AS hours,
+    FLOOR(MOD((rx.max_date - rn.min_date) * 24 * 60, 60)) AS minutes,
+    FLOOR(MOD((rx.max_date - rn.min_date) * 24 * 60 * 60, 60)) AS seconds
+FROM rest_max rx
+JOIN rest_min rn ON rx.num1 = rn.num2 AND rx.doc_id = rn.doc_id
+LEFT JOIN portfolio_data pd ON pd.DOC = rx.doc_id  -- данные о портфеле
+WHERE (rx.max_date - rn.min_date) * 24 * 60 > 20  -- более 20 минут
+  AND rn.min_date BETWEEN TO_DATE('01.08.2025', 'DD.MM.YYYY') AND TO_DATE('04.09.2025', 'DD.MM.YYYY') + 0.99999
+ORDER BY rn.min_date DESC;
+
+----Димин
+WITH rest_max AS (
+    SELECT D__.num AS num1, MAX(S__.s_date) AS max_date, ST__.name
+    FROM ALF_SP_DATA.od_docs D__
+             JOIN ALF_SP_DATA.FS_OD_STEPS S__ ON S__.DOC = D__.ID
+             JOIN ALF_SP_DATA.FS_OD_DOC_STATES ST__ ON ST__.ID = D__.STATE
+    WHERE D__.d_cat = 815
+      AND ST__.name = 'Сверка прошла'
+      AND S__.s_date > SYSDATE-1
+      AND D__.CREATOR in ( 564 )
+      AND S__.err_code = 0
+    GROUP BY D__.num, ST__.name
+), /* максимальное время */
+
+     rest_min AS (
+         SELECT D__.num AS num2, R_DATE AS min_date, ST__.name
+         FROM ALF_SP_DATA.od_docs D__
+                  JOIN ALF_SP_DATA.FS_OD_STEPS S__ ON S__.DOC = D__.ID
+                  JOIN ALF_SP_DATA.FS_OD_DOC_STATES ST__ ON ST__.ID = D__.STATE
+         WHERE D__.d_cat = 815
+           AND ST__.name = 'Сверка прошла'
+           AND S__.s_date > SYSDATE-1
+           AND D__.CREATOR in ( 564 )
+           AND S__.err_code = 0
+         GROUP BY D__.R_DATE, D__.num, ST__.name
+     ) /* минимальное время */
+
+SELECT rx.max_date,
+       rn.min_date, --- дата создания документа
+       rx.num1 as num,
+       ROUND((max_date - min_date) * 86400) AS seconds_diff
+FROM rest_max rx
+         JOIN rest_min rn ON rx.num1 = rn.num2
+WHERE min_date BETWEEN (SYSDATE - 600/1440) AND (SYSDATE - 5/1440)  /* 1000:60 = 16.6 часа */
+  AND ROUND((max_date - min_date) * 86400) > 600 -- Фильтрация по времени обработки
+ORDER BY MIN_DATE DESC
+FETCH FIRST 100 ROWS ONLY;
+
+
+
+
+
+
