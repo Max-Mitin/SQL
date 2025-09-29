@@ -1,0 +1,28 @@
+/* открытые_договора_с блок_актив */
+
+with rest AS  
+(select DISTINCT tc.contract_number_norm, ti.name, atd.client_aux_id, tca.position_value, tc.stop_date   /* tc.stop_date, tca.* */   
+from AGENT_ALFABANK_OUT.tab_ddu_contract atd 
+inner join DWH.tab_investor ti ON ti.alfabank_client_id = atd.client_aux_id
+inner join DWH.tab_contract tc ON tc.investor_id = ti.investor_id
+inner join DWH.tab_contract_aum tca ON tca.contract_id = tc.contract_id                           
+where 
+trunc(tca.aum_date) = to_date ('14.03.2023', 'dd.mm.yyyy')
+and tc.org_id = 1697
+and atd.client_aux_id <> '-'
+and trunc(tc.stop_date) > to_date ('14.03.2023', 'dd.mm.yyyy')  -----between to_date ('24.02.2022', 'dd.mm.yyyy') and to_date ('28.01.2023', 'dd.mm.yyyy')
+---and lower(tca.investment) not like lower('%р/с%')
+and tc.composite_id IN ('100032', '100046', '100050', '100052', '100053', '100066', '100076', '100077', '100086', '100087', '4330693961', '4911352316', '5826119311',
+'6979047034', '8934562803', '9933430719', '9933430720', '9933430721', '10163189059', '13303840594')
+and ti.legal_entity <> 1  
+and tca.asset_id is not null
+and tc.point_of_sale_id NOT IN('469321639', '469322622', '469322630', '469323052', '469323185', '469323310', '469323329', '469323433', '2768276641', '2804627921', 
+'2882877902', '2908493422', '3126172042', '3189220582', '3215223791', '3263034685', '3508748489', '3624317114', '4732468752', '18420101099', '19841298761', '20755773234')
+AND lower(tc.contract_number) not like lower('%умер%') 
+--AND ti.name = 'Ревзин Александр Дмитриевич'
+ORDER BY 1, 5)
+
+Select contract_number_norm AS "Номер договора", name AS "ФИО", client_aux_id, SUM(position_value) as "СУММА заблокированных активов", stop_date AS "Дата закрытия"
+FROM rest
+GROUP BY contract_number_norm, name, client_aux_id, stop_date
+Order by 1, 5
