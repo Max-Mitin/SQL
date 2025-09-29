@@ -1,0 +1,32 @@
+/* Реестр договоров ДУ за 9 месяцев 2024 года из Альфа-ЭДО. Просим предоставить реестр договоров ДУ за 9 месяцев 2024 года из Альфа-ЭДО Аудит 24 запрос 3.13 */
+
+
+with du as (
+select c.contract_id
+, to_char(c.contract_date, 'dd.mm.yyyy') as contract_date
+, c.contract_number_prefix
+, c.client_lastname||' '||c.client_firstname||' '||c.client_middlename as investor
+, case c.original_available when 1 then 'Да' else 'Нет' end as "Ориг.получен"
+, e.employee_name as operator
+, s.name as status, st.name as strategy, t.territorial_division_name as ppz 
+, t.city 
+from DU.tab_contract c
+left join DU.tab_status s on s.status_id = c.status_id
+left join DU.tab_territorial_division t on t.territorial_division_id = c.territorial_division_id
+left join DU.tab_strategy st on st.strategy_id = c.strategy_id
+left join du.tab_employee e on c.employee_id=e.employee_id
+where c.contract_date BETWEEN '01.01.2024' and '30.09.2024'
+order by c.contract_date 
+)
+
+, pay as (
+select cp.contract_id, min(payment_date) as payment_date, min(cp.payment_sum) as payment_sum from DU.tab_contract_payment cp 
+where cp.payment_date BETWEEN '01.01.2024' and '30.09.2024' 
+GROUP by cp.contract_id
+)
+
+select distinct du.*, nvl(cp.payment_sum, 0) as open_sum, cu.currency_alpha_code as currency from du
+left join pay on du.contract_id = pay.contract_id
+left join DU.tab_contract_payment cp on cp.contract_id = du.contract_id and cp.payment_date = pay.payment_date and cp.payment_sum = pay.payment_sum
+left join DU.tab_currency cu on cu.currency_id = cp.currency_id
+order by du.contract_date;
