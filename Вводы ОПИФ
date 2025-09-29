@@ -1,0 +1,26 @@
+/* Суммы первичных вводов по ОПИФ */
+
+SELECT * FROM (
+    SELECT 
+        O.Mf_Order_Id,
+        O.Order_Number,
+        O.Order_date,
+        O.Order_Type,
+        O.Order_status,
+        O.investor_id,
+        -- столбцы из таблицы O
+        Op.Oper_type,
+        Op.Order_Id AS Op_Order_Id,
+        Op.Wiring_date,
+        Op.shares_qty, --AS кол-во,
+        Op.amount_rub, --AS Сумма,
+        aum.MF_VALUE_RUB,
+        -- столбцы из таблицы Op
+        ROW_NUMBER() OVER (PARTITION BY O.order_number ORDER BY Op.Wiring_date) as rn
+    FROM Dwh.Tab_Mf_Order O
+    JOIN DWH.Tab_Mf_Oper Op ON Op.Order_Id = O.Mf_Order_Id
+    join mis.vie_aum aum ON aum.investor_id = Op.investor_id and aum.fund_id = Op.Fund_id 
+    WHERE trunc(aum.aum_date) = to_date ('22.04.2025', 'dd.mm.yyyy')
+and O.order_number IN (/* заявки на выдачу паев */)
+    AND O.Order_Type = 'ЗаявкаНаВыдачуПаев'
+) t
